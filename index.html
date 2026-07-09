@@ -3193,7 +3193,7 @@ function savePoc(){const name=$('pc-name').value.trim();if(!name){toast('Project
 function deletePoc(id){if(!confirm('Delete this POC project?'))return;pocs=pocs.filter(x=>x.id!==id);saveState();sub=null;toast('POC deleted','success');render();}
 
 // ════════════════════════════ WEEKLY REVIEW / MOM ════════════════════════════
-let reviewView='actions',reviewOpenId=null,actFilter='',actProj='',actOwner='',actSort='';
+let reviewView='matrix',reviewOpenId=null,actFilter='',actProj='',actOwner='',actSort='';
 const ACT_SORTS=['Due Date (Earliest)','Due Date (Latest)','Owner (A-Z)','Project (A-Z)','Status'];
 const ACT_SORT_FN={
  'Due Date (Earliest)':(a,b)=>(a.due||'9').localeCompare(b.due||'9'),
@@ -3227,7 +3227,7 @@ function viewReviews(){
    +tile({ico:'check',color:'#059669',tint:'#d1fae5',val:doneWk,lbl:'Closed'})
    +tile({ico:'cal',color:'#2563eb',tint:'#dbeafe',val:reviews.length,lbl:'Reviews Logged'})
  +'</div>'
- +'<div class="seg"><button class="'+(reviewView==='actions'?'on':'')+'" onclick="reviewView=\'actions\';render()">Action Items</button><button class="'+(reviewView==='matrix'?'on':'')+'" onclick="reviewView=\'matrix\';render()">MOM Matrix</button><button class="'+(reviewView==='log'?'on':'')+'" onclick="reviewView=\'log\';render()">Review Log</button></div>'
+ +'<div class="seg"><button class="'+(reviewView==='matrix'?'on':'')+'" onclick="reviewView=\'matrix\';render()">MOM Matrix</button><button class="'+(reviewView==='actions'?'on':'')+'" onclick="reviewView=\'actions\';render()">Action Items</button><button class="'+(reviewView==='log'?'on':'')+'" onclick="reviewView=\'log\';render()">Review Log</button></div>'
  +(reviewView==='actions'?actionsTable():reviewView==='matrix'?reviewMatrix():reviewLog());
 }
 function prevReviewNote(curId,proj){const cur=reviews.find(r=>r.id===curId);if(!cur)return null;
