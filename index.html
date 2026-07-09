@@ -1043,6 +1043,7 @@ function ensureTaskPlan(p){
    if(t.pct==null)t.pct=isTaskDone(t)?100:(t.status==='On Track'?40:0);
    if(t.days==null)t.days=(t.planStart&&t.planEnd)?Math.max(0,daysBetweenIso(t.planStart,t.planEnd)):2;
    if(t.offset==null)t.offset=1;
+   if(t.remarks==null)t.remarks='';
  });
  // default sequential dependency chain (first task anchors to KO)
  let prev='';p.tasks.forEach(t=>{if(t.dep==null)t.dep=prev;prev=t.n;});
@@ -2130,6 +2131,7 @@ function gateTab(n){
      +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualEnd\',this.value)"></td>'
      +'<td><div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div></td>'
      +'<td><select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'
+     +'<td><input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'remarks\',this.value)"></td>'
      +'</tr>';}).join('');
    // doc/MOM upload provision for gate closure
    const docs=n.gateDocs&&n.gateDocs[gi]?n.gateDocs[gi]:[];
@@ -2146,7 +2148,7 @@ function gateTab(n){
    }
    const sub=incl?(done+'/'+tasks.length+' complete'+(gd&&gd.planStart?' · '+fmtNice(new Date(gd.planStart))+' → '+fmtNice(new Date(gd.planEnd)):'')+ckCnt):(applic==='NA'?'Not applicable for '+esc(n.category||'')+' — excluded from progress':'Skipped for this project — excluded from progress');
    const right=incl?('<div class="aprog"><div class="ab"><i style="width:'+gp+'%;background:'+(gp===100?'var(--green)':'var(--acc)')+'"></i></div><div class="ap">'+gp+'%</div></div>'):(gToggle?'<div onclick="event.stopPropagation()">'+gToggle+'</div>':'');
-   const bodyInner=incl?('<div class="tblwrap gate-scroll"><table class="tbl gatetbl gatetbl2" style="min-width:1410px"><thead><tr><th>Task No</th><th>Activity / Task</th><th>Responsibility</th><th>Depends On</th><th>Offset</th><th>Plan Start</th><th>Days</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>% Done</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+docRow+ckBlocks):('<div style="padding:16px;font-size:11.5px;color:var(--t2)">This gate is '+(applic==='NA'?'<b>not applicable</b>':'<b>set to skip</b>')+' for category <b>'+esc(n.category||'')+'</b>. Its tasks are hidden and excluded from project progress.<div style="margin-top:10px">'+gToggle+'</div></div>');
+   const bodyInner=incl?('<div class="tblwrap gate-scroll"><table class="tbl gatetbl gatetbl2" style="min-width:1570px"><thead><tr><th>Task No</th><th>Activity / Task</th><th>Responsibility</th><th>Depends On</th><th>Offset</th><th>Plan Start</th><th>Days</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>% Done</th><th>Status</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+docRow+ckBlocks):('<div style="padding:16px;font-size:11.5px;color:var(--t2)">This gate is '+(applic==='NA'?'<b>not applicable</b>':'<b>set to skip</b>')+' for category <b>'+esc(n.category||'')+'</b>. Its tasks are hidden and excluded from project progress.<div style="margin-top:10px">'+gToggle+'</div></div>');
    return '<div class="acc'+(incl?'':' acc-off')+'"><div class="acc-h" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\'">'
     +'<div class="acnt">'+(incl?done:'–')+'</div><div style="flex:1"><div class="an">'+G.g+' · '+esc(G.name)+gBadge+'</div><div class="as">'+sub+'</div></div>'
     +right+'</div>'
@@ -2779,7 +2781,7 @@ function pocInit(p){if(!p.skip)p.skip={};if(!p.charter)p.charter={};if(!p.parts)
  if(!Array.isArray(p.charter.extraTeam))p.charter.extraTeam=[];
  if(!p.tasks){p.tasks=[];let prev='';POC_GATES.forEach((g,si)=>g.t.forEach(t=>{p.tasks.push({stage:si,n:t[0],name:t[1],dep:prev,offset:(prev?1:0),days:2,pct:0,planStart:'',planEnd:'',actualStart:'',actualEnd:'',resp:'',status:'Not Started',manualStart:false});prev=t[0];}));
    if(p.stage>0)p.tasks.forEach(t=>{if(t.stage<p.stage&&!p.skip[t.stage]){t.status='Completed';t.pct=100;}});}
- p.tasks.forEach(t=>{if(t.dep==null)t.dep='';if(t.offset==null)t.offset=0;if(t.days==null)t.days=2;if(t.pct==null)t.pct=0;});
+ p.tasks.forEach(t=>{if(t.dep==null)t.dep='';if(t.offset==null)t.offset=0;if(t.days==null)t.days=2;if(t.pct==null)t.pct=0;if(t.remarks==null)t.remarks='';});
  if(p.koDate)recalcChain(p.tasks,p.koDate);
 }
 function pocActiveTasks(p){return p.tasks.filter(t=>!p.skip[t.stage]);}
@@ -3097,13 +3099,14 @@ function pocGateTab(p){pocInit(p);
       +'<td><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualStart||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualStart\',this.value)"></td>'
       +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualEnd||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualEnd\',this.value)"></td>'
       +'<td><div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div></td>'
-      +'<td><select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td></tr>';
+      +'<td><select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'
+      +'<td><input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setPocTask(\''+p.id+'\','+idx+',\'remarks\',this.value)"></td></tr>';
    }).join('');
    const skipToggle=POC_SKIPPABLE[si]?'<label class="poc-skip" onclick="event.stopPropagation()"><input type="checkbox" '+(skip?'checked':'')+' onchange="setPocSkip(\''+p.id+'\','+si+',this.checked)"> Not required</label>':'';
    return '<div class="acc'+(open?' op':'')+'"><div class="acc-h" onclick="this.parentNode.classList.toggle(\'op\')">'
      +'<div class="acnt">'+ts.length+'</div><div style="flex:1"><div class="an">'+(POC_STAGE_LABELS[si]||('Stage '+(si+1)))+(skip?' · <span style="color:var(--t3)">skipped</span>':'')+(unlocked?'':' · <span style="color:#b45309;font-size:10px">🔒 actuals locked</span>')+'</div><div class="as">'+pct+'% complete</div></div>'+skipToggle
      +'<div class="aprog"><div class="ab"><i style="width:'+pct+'%;background:#7c3aed"></i></div><div class="ap">'+pct+'%</div></div></div>'
-     +'<div class="acc-b" style="display:'+(open?'block':'none')+';padding:0">'+(skip?'<div class="acc-empty">This build is marked not required.</div>':'<div class="tblwrap gate-scroll"><table class="tbl gatetbl gatetbl2" style="min-width:1410px"><thead><tr><th>Task No</th><th>Activity / Task</th><th>Responsibility</th><th>Depends On</th><th>Offset</th><th>Plan Start</th><th>Days</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>% Done</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+'</div></div>';
+     +'<div class="acc-b" style="display:'+(open?'block':'none')+';padding:0">'+(skip?'<div class="acc-empty">This build is marked not required.</div>':'<div class="tblwrap gate-scroll"><table class="tbl gatetbl gatetbl2" style="min-width:1570px"><thead><tr><th>Task No</th><th>Activity / Task</th><th>Responsibility</th><th>Depends On</th><th>Offset</th><th>Plan Start</th><th>Days</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>% Done</th><th>Status</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+'</div></div>';
  }).join('');
  const koBox='<div class="kobox"><div><div class="kol">POC KO Date <span class="mut" style="font-weight:400">— anchors the whole schedule</span></div><div class="kos">Set the kickoff date; every activity auto-schedules from it through the dependency chain (default +1 day gap, 2-day duration). Edit any Start / Days / End and the other two adjust.</div></div>'
    +'<input type="date" class="koinput" value="'+(p.koDate||'')+'" onchange="setPocKO(\''+p.id+'\',this.value)"></div>';
