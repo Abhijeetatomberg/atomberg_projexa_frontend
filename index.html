@@ -1943,7 +1943,7 @@ function npdPortfolioViz(){
  const attnRows=portN.slice(0,8).map(x=>'<div class="attn-row" onclick="sub=\''+x.p.id+'\';route=\'npd\';npdTab=\'gate\';render()"><div class="attn-main"><span class="attn-no">'+esc(x.t.n)+'</span><span class="attn-name">'+esc(x.t.name)+'</span></div><div class="attn-side"><span class="attn-proj">'+esc(x.p.name)+'</span>'+(x.t.resp?'<span class="attn-owner">'+esc(x.t.resp)+'</span>':'<span class="attn-owner mut">unassigned</span>')+stPill(x.t.status,x.t.pct)+'</div></div>').join('')||'<div class="attn-empty">✓ No at-risk or delayed activities across the portfolio</div>';
  const moreN=portN.length>8?'<div class="attn-more" style="cursor:default">'+(portN.length-8)+' more flagged across projects</div>':'';
  const insightRow='<div class="dgrid">'+statusDonutCard('Portfolio Task Status',allTasks)+'<div class="card"><div class="card-h"><div class="ct">'+svg(I.warn)+'Tasks Needing Attention</div><span class="badge '+(portN.length?'bg-red':'bg-green')+'">'+portN.length+'</span></div><div class="card-b" style="padding-top:4px">'+attnRows+moreN+'</div></div></div>';
- return kpis+insightRow+gatemap+health;
+ return kpis+collap('Charts &amp; analytics — NPD portfolio',insightRow+gatemap+health,false);
 }
 function npdCards(){
  let list=npds.filter(n=>(npdGateFilter===''||n.gate===+npdGateFilter)&&(!npdSearch||matchQ(n.name+' '+n.id+' '+n.cust,npdSearch)));
@@ -2847,6 +2847,7 @@ function pocPortfolioViz(){
  const attnRows=port.slice(0,8).map(x=>'<div class="attn-row" onclick="sub=\''+x.p.id+'\';route=\'poc\';pocTab=\'gate\';render()"><div class="attn-main"><span class="attn-no">'+esc(x.t.n)+'</span><span class="attn-name">'+esc(x.t.name)+'</span></div><div class="attn-side"><span class="attn-proj">'+esc(x.p.name)+'</span>'+(x.t.resp?'<span class="attn-owner">'+esc(x.t.resp)+'</span>':'<span class="attn-owner mut">unassigned</span>')+stPill(x.t.status,x.t.pct)+'</div></div>').join('')||'<div class="attn-empty">✓ No at-risk or delayed tasks across the portfolio</div>';
  const moreA=port.length>8?'<div class="attn-more" style="cursor:default">'+(port.length-8)+' more flagged across projects</div>':'';
  return kpis
+ +collap('Charts &amp; analytics — POC portfolio',(''
  +'<div class="dgrid">'
   +statusDonutCard('Portfolio Task Status',allTasks)
   +'<div class="card"><div class="card-h"><div class="ct">'+svg(I.target)+'POCs by Stage</div><span class="mut" style="font-size:11px">pipeline distribution</span></div><div class="card-b">'+stageBars+'</div></div>'
@@ -2854,7 +2855,7 @@ function pocPortfolioViz(){
  +'<div class="dgrid">'
   +'<div class="card"><div class="card-h"><div class="ct">'+svg(I.chart)+'POC Health</div><span class="mut" style="font-size:11px">progress &amp; status — click to open</span></div><div class="card-b">'+(health||'<div class="empty">No active POCs</div>')+'</div></div>'
   +'<div class="card"><div class="card-h"><div class="ct">'+svg(I.warn)+'Tasks Needing Attention</div><span class="badge '+(port.length?'bg-red':'bg-green')+'">'+port.length+'</span></div><div class="card-b" style="padding-top:4px">'+attnRows+moreA+'</div></div>'
- +'</div>';
+ +'</div>'),false);
 }
 function viewPoc(){
  pocs.forEach(pocInit);
