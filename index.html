@@ -903,7 +903,7 @@ select.fsel:focus{outline:none;border-color:var(--acc)}
     <nav class="nav" id="nav"></nav>
   </aside>
   <div class="main">
-    <div class="topbar"><button class="sbtoggle" onclick="toggleSidebar()" title="Hide / show sidebar" aria-label="Toggle sidebar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><div class="crumb" id="crumb"></div><div class="userbox" id="userbox"></div><div class="uiscale" title="Display size — make everything smaller or larger"><span class="ais">Aa</span><select id="uiscale" onchange="setUiScale(this.value)"><option value="75">75%</option><option value="80">80%</option><option value="85">85%</option><option value="90">90%</option><option value="95">95%</option><option value="100">100%</option><option value="110">110%</option></select></div><button class="syncchip sc-saving" id="dbchip" onclick="openDataModal()" title="Data &amp; database connection">Connecting…</button></div>
+    <div class="topbar"><button class="sbtoggle" onclick="toggleSidebar()" title="Hide / show sidebar" aria-label="Toggle sidebar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><div class="crumb" id="crumb"></div><div class="userbox" id="userbox"></div><div class="uiscale" title="Display size — make everything smaller or larger"><span class="ais">Aa</span><select id="uiscale" onchange="setUiScale(this.value)"><option value="75">75%</option><option value="80">80%</option><option value="85">85%</option><option value="90">90%</option><option value="95">95%</option><option value="100">100%</option><option value="110">110%</option></select></div></div>
     <div class="scroll"><div id="view"></div></div>
   </div>
 </div>
@@ -1253,28 +1253,6 @@ async function readAttachInputsAndUpload(meta){
  if(title||link)return {name:title||link,link};
  return null;
 }
-function exportData(){const blob=new Blob([JSON.stringify(collectState(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='projexa-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
-function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{applyState(JSON.parse(r.result));try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(x){}toast('Data restored','success');closeModal();render();}catch(err){toast('Invalid backup file','error');}};r.readAsText(f);};inp.click();}
-function openDataModal(){
- let dbSection;
- if(dbConnState==='conflict'){
-   dbSection='<div class="dm-warn">⚠ The database has a newer version than what you last loaded (likely someone else saved). Choose how to resolve:</div>'
-   +'<div style="display:flex;gap:10px;margin-top:12px"><button class="btn b-pri" style="flex:1" onclick="resolveDbConflict(true)">Load their latest</button><button class="btn b-gho" style="flex:1" onclick="resolveDbConflict(false)">Keep mine &amp; overwrite</button></div>';
- } else {
-   dbSection='<div class="dm-row"><span class="scd" style="background:'+(dbConnState==='connected'?'#059669':(dbConnState==='offline'?'#d97706':'#94a3b8'))+'"></span> <b>'+(dbConnState==='connected'?'Connected to database':(dbConnState==='offline'?'Database unreachable — using local copy':'Checking…'))+'</b></div>'
-   +'<div class="dm-grid" style="margin-top:8px"><button class="btn b-gho" onclick="loadFromDb().then(()=>toast(\'Reloaded from database\',\'success\'))">↻ Reload from database</button><button class="btn b-gho" onclick="saveToDb(true).then(()=>toast(\'Saved to database\',\'success\'))">⬆ Save now</button></div>';
- }
- const body=dbSection
-   +'<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:12px"><div class="dm-note">Local backup/restore still works as a manual safety net:</div>'
-   +'<div class="dm-grid" style="margin-top:6px"><button class="btn b-gho" onclick="exportData()">⬇ Download backup</button><button class="btn b-gho" onclick="importData()">⬆ Restore backup</button></div></div>';
- modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Data &amp; Database</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'+body+'<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:12px"><div style="font-size:11px;color:var(--t3);margin-bottom:7px;font-weight:600;letter-spacing:.03em">DANGER ZONE</div><button class="btn b-gho b-sm" onclick="exportData()">\u2193 Backup first</button> <button class="btn b-gho b-sm" style="color:var(--red);border-color:var(--red)" onclick="resetAllData()">Reset all data \u2014 start empty</button></div></div>');
-}
-async function resetAllData(){
- if(!confirm('Erase ALL Projexa data and start with a completely empty app?\n\nThis removes every project, BOM part, ECN, review and setting on this browser. It cannot be undone — download a backup first if unsure.'))return;
- try{localStorage.removeItem(KEY);}catch(e){}
- location.reload();
-}
-function resetProjexa(){if(confirm('Erase all saved Projexa data on this browser and reload with demo data?')){localStorage.removeItem(KEY);location.reload();}}
 let _t=null;function autosave(){clearTimeout(_t);_t=setTimeout(saveState,500);}
 
 // ════════════════════ DATABASE SYNC (production — always connected) ════════════════════
@@ -1285,7 +1263,7 @@ let _t=null;function autosave(){clearTimeout(_t);_t=setTimeout(saveState,500);}
 const DB_STATE_KEY='projexa-main';
 const PROD_API_BASE='https://atomberg-projexa-backend-service.onrender.com/api'; // ← the one line to change if the backend ever moves
 let dbApiBase=PROD_API_BASE;
-let dbConnState='checking'; // checking | connected | saving | offline | conflict
+let dbConnState='checking'; // checking | connected | saving | offline — no manual UI, purely internal bookkeeping
 let dbLastSavedAt=null;
 let _dbSyncTimer=null;
 
@@ -1303,36 +1281,34 @@ function notifyAssigned(ownerName,itemTitle,moduleLabel,project,dueDate){
 }
 
 async function loadFromDb(silent){
- dbConnState='checking';updateDbChip();
+ dbConnState='checking';
  try{
   const res=await dbFetch('/app-state/'+DB_STATE_KEY);
-  if(res.status===404){dbConnState='connected';dbLastSavedAt=null;updateDbChip();return false;} // DB reachable, nothing saved yet
+  if(res.status===404){dbConnState='connected';dbLastSavedAt=null;return false;} // DB reachable, nothing saved yet
   if(!res.ok)throw new Error('http '+res.status);
   const row=await res.json();
   applyState(row.data);
   try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){}
-  dbLastSavedAt=row.updatedAt;dbConnState='connected';updateDbChip();
+  dbLastSavedAt=row.updatedAt;dbConnState='connected';
   if(!silent)render();
   return true;
- }catch(e){dbConnState='offline';updateDbChip();return false;}
+ }catch(e){dbConnState='offline';return false;}
 }
 async function saveToDb(force){
  try{
   const res=await dbFetch('/app-state/'+DB_STATE_KEY,{method:'PUT',body:JSON.stringify({data:collectState(),updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'',expectedUpdatedAt:force?null:dbLastSavedAt})});
-  if(res.status===409){dbConnState='conflict';updateDbChip();return;}
+  if(res.status===409){
+   // Someone else saved first — silently pull their latest so the next autosave succeeds,
+   // instead of getting permanently stuck (there's no manual "resolve" button anymore).
+   await loadFromDb(true);render();
+   toast('This data was updated elsewhere — refreshed with the latest version','info');
+   return;
+  }
   if(!res.ok)throw new Error('http '+res.status);
-  const row=await res.json();dbLastSavedAt=row.updatedAt;dbConnState='connected';updateDbChip();
- }catch(e){dbConnState='offline';updateDbChip();}
+  const row=await res.json();dbLastSavedAt=row.updatedAt;dbConnState='connected';
+ }catch(e){dbConnState='offline';}
 }
-function scheduleDbSync(){clearTimeout(_dbSyncTimer);if(dbConnState!=='conflict'){dbConnState='saving';updateDbChip();}_dbSyncTimer=setTimeout(()=>saveToDb(false),1200);}
-function updateDbChip(){const el=document.getElementById('dbchip');if(!el)return;let cls,txt;
- if(dbConnState==='checking'){cls='sc-saving';txt='Connecting…';}
- else if(dbConnState==='saving'){cls='sc-saving';txt='Saving…';}
- else if(dbConnState==='conflict'){cls='sc-error';txt='Data changed — resolve';}
- else if(dbConnState==='offline'){cls='sc-warn';txt='Offline — using local copy';}
- else {cls='sc-synced';txt='Connected to database';}
- el.className='syncchip '+cls;el.textContent=txt;}
-async function resolveDbConflict(takeTheirs){if(takeTheirs){await loadFromDb();toast('Loaded the latest from the database','success');}else{await saveToDb(true);toast('Overwrote database with your local copy','success');}closeModal();}
+function scheduleDbSync(){clearTimeout(_dbSyncTimer);dbConnState='saving';_dbSyncTimer=setTimeout(()=>saveToDb(false),1200);}
 
 // ════════════════════════════ HELPERS ════════════════════════════
 const $=id=>document.getElementById(id);
@@ -4947,9 +4923,8 @@ rfqCounter=1;npdCounter=1;bomIdCtr=1;lineIdCtr=1;reviewCtr=1;actionCtr=1;pocCoun
 loadState();
 gateApp();
 try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){} // local baseline only — do NOT push to DB yet
-updateDbChip();
 loadFromDb();
-window.addEventListener('focus',function(){if(dbConnState!=='saving'&&dbConnState!=='conflict')loadFromDb(true).then(ok=>{if(ok)render();});});
+window.addEventListener('focus',function(){if(dbConnState!=='saving')loadFromDb(true).then(ok=>{if(ok)render();});});
 window.addEventListener('hashchange',function(){_deepLinkApplied=false;render();});
 function runSplash(){
  var s=document.getElementById('splash');if(!s)return;
