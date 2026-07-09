@@ -3220,7 +3220,7 @@ function viewReviews(){
  const doneWk=momActions.filter(a=>a.status==='Done').length;
  return ''
  +'<div class="phead"><div><h1>Weekly Review</h1><div class="sub">Minutes of meeting &amp; action tracking — reviewed project by project</div></div>'
-   +'<div class="acts"><button class="btn b-pri" onclick="newReview()">'+svg(I.plus)+'New Review</button></div></div>'
+   +'<div class="acts"><button class="btn b-gho" onclick="reviewMomTemplate()">'+svg(I.export)+'Template</button><button class="btn b-gho" onclick="uploadReviewMom()">📤 Upload Weekly MOM</button><button class="btn b-pri" onclick="newReview()">'+svg(I.plus)+'New Review</button></div></div>'
  +'<div class="stats c4">'
    +tile({ico:'check',color:(open.length?'#d97706':'#059669'),tint:(open.length?'#fef3c7':'#d1fae5'),val:open.length,lbl:'Open Actions'})
    +tile({ico:'warn',color:(overdue.length?'#dc2626':'#059669'),tint:(overdue.length?'#fee2e2':'#d1fae5'),val:overdue.length,lbl:'Overdue'})
@@ -3230,6 +3230,68 @@ function viewReviews(){
  +'<div class="seg"><button class="'+(reviewView==='matrix'?'on':'')+'" onclick="reviewView=\'matrix\';render()">MOM Matrix</button><button class="'+(reviewView==='actions'?'on':'')+'" onclick="reviewView=\'actions\';render()">Action Items</button><button class="'+(reviewView==='log'?'on':'')+'" onclick="reviewView=\'log\';render()">Review Log</button></div>'
  +(reviewView==='actions'?actionsTable():reviewView==='matrix'?reviewMatrix():reviewLog());
 }
+const MOM_MONTHS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function parseMomHeaderDate(h,year){
+ const m=String(h||'').match(/(\d{1,2})[\s\-\/]+([A-Za-z]{3,})/);
+ if(!m)return null;
+ const day=+m[1];const mon=MOM_MONTHS[m[2].slice(0,3).toLowerCase()];
+ if(mon==null)return null;
+ const d=new Date(year,mon,day);
+ return isNaN(d)?null:isoOf(d);
+}
+function reviewMomTemplate(){
+ const h=['Project Type','Project Name','Customer','Electrical lead','Mechanical Lead','PED lead','Weekly MOM- 03 July','Weekly MOM- 10 July'];
+ const ex=['NPD','Motor Assembly Razon','ATPL','Swapnesh Ghadge','Kalpesh Bhosale','Anant Hudekar','Discussed tooling delay, target pushed by 1 week','Tool trial completed, awaiting FPA'];
+ const csv=h.join(',')+'\n'+ex.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',');
+ const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='Weekly_MOM_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
+function uploadReviewMom(){
+ const yr=prompt('What year are these Weekly MOM columns from? (e.g. '+new Date().getFullYear()+')',String(new Date().getFullYear()));
+ if(!yr)return;
+ const year=parseInt(yr,10)||new Date().getFullYear();
+ const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
+ inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=function(e){try{let rows;
+    if(/\.csv$/i.test(f.name)){rows=bomCsvRows(e.target.result);}
+    else if(window.XLSX){const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});}
+    else{toast('Excel parsing needs internet. Save as CSV and upload that (works offline).','info');return;}
+    reviewMomImportRows(rows,year);
+  }catch(err){toast('Could not read file: '+err.message);}};
+  if(/\.csv$/i.test(f.name))rd.readAsText(f);else rd.readAsArrayBuffer(f);};
+ inp.click();}
+function reviewMomImportRows(rows,year){
+ if(!rows||!rows.length){toast('Empty file');return;}
+ const hdr=rows[0].map(h=>String(h||'').trim());
+ const hdrLc=hdr.map(h=>h.toLowerCase());
+ const find=keys=>{for(const k of keys){const i=hdrLc.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
+ const cType=find(['project type']),cName=find(['project name','project']),cCust=find(['customer']);
+ if(cName<0){toast('Could not find a "Project Name" column');return;}
+ const fixedIdx=new Set([cType,cName,cCust,find(['electrical']),find(['mechanical']),find(['ped'])].filter(i=>i>=0));
+ const dateCols=[];hdr.forEach((h,i)=>{if(fixedIdx.has(i))return;const iso=parseMomHeaderDate(h,year);if(iso)dateCols.push({i,iso});});
+ if(!dateCols.length){toast('No weekly MOM date columns recognized (expected headers like "Weekly MOM- 03 July")');return;}
+ const seenNew=new Set();let notesAdded=0,newProj=0,reviewsTouched=0;
+ dateCols.forEach(dc=>{
+  let rv=reviews.find(r=>r.date===dc.iso);
+  if(!rv){rv={id:reviewCtr++,date:dc.iso,attendees:'',notes:{}};reviews.push(rv);}
+  reviewsTouched++;
+  for(let r=1;r<rows.length;r++){
+   const row=rows[r];if(!row)continue;
+   const name=String(row[cName]||'').trim();if(!name)continue;
+   const note=String(row[dc.i]||'').trim();if(!note)continue;
+   rv.notes[name]=note;notesAdded++;
+   const key=name.toLowerCase();
+   const exists=npds.some(n=>n.name.toLowerCase()===key)||pocs.some(p=>p.name.toLowerCase()===key);
+   if(!exists&&!seenNew.has(key)){
+    seenNew.add(key);
+    const type=cType>=0?String(row[cType]||'').trim():'';
+    const cust=cCust>=0?String(row[cCust]||'').trim():'';
+    if(/poc/i.test(type)){const id='POC-'+new Date().getFullYear()+'-'+String(pocCounter++).padStart(3,'0');const p={id,name,cust,app:'',owner:'—',reqDate:'',sampleBy:'',sampleQty:'',stage:0,koDone:false,koDate:'',created:fmtNice(new Date()),skip:{},promotedTo:null,charter:{},parts:[]};pocInit(p);pocs.push(p);}
+    else{const id='NPD-'+new Date().getFullYear()+'-'+String(npdCounter++).padStart(3,'0');const p={id,name,cust,businessUnit:'',devType:'NPD',customerModel:'',annualVol:'',rfqNo:'',owner:'Unassigned',gate:0,koIso:'',start:'',launch:'TBD',bom:0,risk:0,category:''};initNpd(p);npds.push(p);}
+    newProj++;
+   }
+  }
+ });
+ saveState();render();
+ toast(reviewsTouched+' review date(s), '+notesAdded+' notes imported'+(newProj?', '+newProj+' placeholder project(s) created':''),'success');}
 function prevReviewNote(curId,proj){const cur=reviews.find(r=>r.id===curId);if(!cur)return null;
  const cand=reviews.filter(r=>(r.notes&&r.notes[proj])&&(r.date<cur.date||(r.date===cur.date&&r.id<curId)));
  cand.sort((a,b)=>a.date<b.date?1:(a.date>b.date?-1:b.id-a.id));return cand[0]||null;}
@@ -3957,12 +4019,40 @@ function viewSample(){
    :'<div class="card"><div class="card-b" style="text-align:center;padding:40px 20px"><div style="font-size:13px;color:var(--t2);margin-bottom:14px">No sample submissions tracked yet.</div><button class="btn b-pri" onclick="addSampleModal()">'+svg(I.plus)+'Add First Sample</button></div></div>';
  return ''
  +'<div class="phead"><div><h1>Sample Submission</h1><div class="sub">Track customer sample builds — spec, material readiness, assembly, inspection &amp; submission</div></div>'
-   +'<div class="acts"><button class="btn b-pri" onclick="addSampleModal()">'+svg(I.plus)+'New Sample</button></div></div>'
+   +'<div class="acts"><button class="btn b-gho" onclick="sampleTemplate()">'+svg(I.export)+'Template</button><button class="btn b-gho" onclick="uploadSample()">📤 Upload Excel</button><button class="btn b-pri" onclick="addSampleModal()">'+svg(I.plus)+'New Sample</button></div></div>'
  +kpis
  +(samples.length?collap('Charts — Samples by Status & Upcoming Submissions',insight,false):'')
  +(samples.length?'<div class="card" style="margin-bottom:12px"><div class="card-b" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="search" style="min-width:220px">'+svg(I.search)+'<input placeholder="Search project, spec, remarks…" value="'+esc(sampleSearch)+'" id="gsearch" oninput="sampleSearch=this.value;render()"></div>'+statusFilterSel+sel2('sampleSort','Sort: Default',SAMPLE_SORTS,sampleSort)+'</div></div>':'')
  +table;
 }
+const SAMPLE_IMPORT_COLS=['Category','Project Name','Customer','Spec','Sample Qty','Req. Received Date','Drawing Availability','Material Availability','Planned Submission','Assembly Completion','Inspection Date','Submission Date','Remarks','Planner Remarks','Status'];
+function sampleTemplate(){const h=SAMPLE_IMPORT_COLS;
+ const ex=['CF','Fan Motor V2','ATPL','Endurance sample','5','26-May-26','Yes','Yes','15-Jun-26','10-Jun-26','12-Jun-26','','Handled by QA','On track','In Progress'];
+ const csv=h.join(',')+'\n'+ex.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',');
+ const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='Sample_Submission_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
+function uploadSample(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
+ inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=function(e){try{let rows;
+    if(/\.csv$/i.test(f.name)){rows=bomCsvRows(e.target.result);}
+    else if(window.XLSX){const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});}
+    else{toast('Excel parsing needs internet. Save as CSV and upload that (works offline).','info');return;}
+    sampleImportRows(rows);
+  }catch(err){toast('Could not read file: '+err.message);}};
+  if(/\.csv$/i.test(f.name))rd.readAsText(f);else rd.readAsArrayBuffer(f);};
+ inp.click();}
+function sampleImportRows(rows){if(!rows||!rows.length){toast('Empty file');return;}
+ let hi=rows.findIndex(r=>r&&r.some(c=>/project name|project/i.test(String(c||''))));if(hi<0)hi=0;
+ const hdr=rows[hi].map(h=>String(h||'').toLowerCase().trim());
+ const find=keys=>{for(const k of keys){const i=hdr.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
+ const C={cat:find(['category','cat']),proj:find(['project name','project']),cust:find(['customer']),spec:find(['spec']),qty:find(['qty','quantity']),req:find(['req','received']),draw:find(['drawing']),mat:find(['material']),plan:find(['planned submission','planned sub']),asm:find(['assembly']),insp:find(['inspection']),sub:find(['submission to customer','submission']),rem:find(['remarks']),planner:find(['planner']),status:find(['status'])};
+ if(C.proj<0){toast('Could not find a "Project Name" column');return;}
+ const normSt=s=>{s=(s||'').trim();return SAMPLE_ST.includes(s)?s:(s?'In Progress':'New');};
+ let added=0;
+ for(let r=hi+1;r<rows.length;r++){const row=rows[r];if(!row)continue;const g=i=>i>=0?String(row[i]||'').trim():'';
+   const proj=g(C.proj);if(!proj)continue;
+   samples.unshift({id:sampleCtr++,status:normSt(g(C.status)),cat:g(C.cat)||'CF',project:proj,customer:g(C.cust)||'ATPL',spec:g(C.spec),qty:g(C.qty),reqDate:ecnDateNorm(g(C.req)),drawing:g(C.draw),material:g(C.mat),plannedSub:ecnDateNorm(g(C.plan)),assembly:ecnDateNorm(g(C.asm)),inspection:ecnDateNorm(g(C.insp)),submission:ecnDateNorm(g(C.sub)),remarks:g(C.rem),planner:g(C.planner)});
+   added++;}
+ saveState();render();toast(added+' samples imported','success');}
 // ════════════════════════════ PENDING TASKS (cross-module cockpit) ════════════════════════════
 const PT_MODC={npd:['#1d4ed8','#dbeafe'],poc:['#6d28d9','#ede9fe'],act:['#b45309','#fef3c7'],smp:['#0f766e','#ccfbf1']};
 const PT_MODL={npd:'NPD',poc:'POC',act:'Review',smp:'Sample'};
