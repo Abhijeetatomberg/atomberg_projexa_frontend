@@ -1911,12 +1911,18 @@ function npdPortfolioViz(){
  const risk=H.filter(x=>x.h.status==='At Risk'||x.h.status==='Delayed').length;
  const preko=H.filter(x=>x.h.status==='Pre-KO').length;
  const avg=Math.round(npds.reduce((a,p)=>a+npdPct(p),0)/npds.length);
- const kpis='<div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">'
+ const allTasksPre=[];npds.forEach(p=>(p.tasks||[]).forEach(t=>allTasksPre.push(t)));
+ const pendTasks=allTasksPre.filter(t=>stKey(t.status,t.pct)!=='done').length;
+ const kpis='<div class="stats" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">'
   +tile({ico:'npd',color:'#2563eb',tint:'#dbeafe',val:npds.length,lbl:'Active Projects',cap:(preko?preko+' pre-KO':'all kicked off')})
   +tile({ico:'check',color:'#059669',tint:'#d1fae5',val:onTrack,lbl:'On Track'})
   +tile({ico:'warn',color:(risk?'#dc2626':'#059669'),tint:(risk?'#fee2e2':'#d1fae5'),val:risk,lbl:'Delayed / At Risk'})
+  +tile({ico:'clock',color:(pendTasks?'#d97706':'#059669'),tint:(pendTasks?'#fef3c7':'#d1fae5'),val:pendTasks,lbl:'Pending Tasks'})
   +tile({ico:'chart',color:'#7c3aed',tint:'#ede9fe',val:avg+'%',lbl:'Avg Completion'})
  +'</div>';
+ const gateDist=GATE_LABELS.map((g,i)=>npds.filter(n=>n.gate===i).length);
+ const maxGateDist=Math.max(1,...gateDist);
+ const gateBars=GATE_LABELS.map((g,i)=>'<div class="fpb"><div class="fpb-name">'+g+'</div><div class="fpb-bar"><span style="width:'+(gateDist[i]/maxGateDist*100)+'%;background:'+(i===GATE_LABELS.length-1?'#059669':'#2563eb')+'"></span></div><div class="fpb-meta">'+gateDist[i]+'</div></div>').join('');
  const cols=['KO','AB-0','AB-1','AB-2','AB-3','AB-4','AB-5','AB-6','AB-7'];
  const cellColor=(p,i)=>{if(i===0)return p.koDone?'var(--green)':'#fcd34d';
    if(!p.koDone||!p.gatePlan)return '#e5e7eb';const st=p.gatePlan[i-1]?p.gatePlan[i-1].status:'Not Started';
@@ -1942,8 +1948,9 @@ function npdPortfolioViz(){
  portN.sort((a,b)=>sevN[a.k]-sevN[b.k]);
  const attnRows=portN.slice(0,8).map(x=>'<div class="attn-row" onclick="sub=\''+x.p.id+'\';route=\'npd\';npdTab=\'gate\';render()"><div class="attn-main"><span class="attn-no">'+esc(x.t.n)+'</span><span class="attn-name">'+esc(x.t.name)+'</span></div><div class="attn-side"><span class="attn-proj">'+esc(x.p.name)+'</span>'+(x.t.resp?'<span class="attn-owner">'+esc(x.t.resp)+'</span>':'<span class="attn-owner mut">unassigned</span>')+stPill(x.t.status,x.t.pct)+'</div></div>').join('')||'<div class="attn-empty">✓ No at-risk or delayed activities across the portfolio</div>';
  const moreN=portN.length>8?'<div class="attn-more" style="cursor:default">'+(portN.length-8)+' more flagged across projects</div>':'';
- const insightRow='<div class="dgrid">'+statusDonutCard('Portfolio Task Status',allTasks)+'<div class="card"><div class="card-h"><div class="ct">'+svg(I.warn)+'Tasks Needing Attention</div><span class="badge '+(portN.length?'bg-red':'bg-green')+'">'+portN.length+'</span></div><div class="card-b" style="padding-top:4px">'+attnRows+moreN+'</div></div></div>';
- return kpis+collap('Charts &amp; analytics — NPD portfolio',insightRow+gatemap+health,false);
+ const row1='<div class="dgrid">'+statusDonutCard('Portfolio Task Status',allTasks)+'<div class="card"><div class="card-h"><div class="ct">'+svg(I.target)+'NPD Programs by Gate</div><span class="mut" style="font-size:11px">pipeline distribution</span></div><div class="card-b">'+gateBars+'</div></div></div>';
+ const row2='<div class="dgrid">'+health+'<div class="card"><div class="card-h"><div class="ct">'+svg(I.warn)+'Tasks Needing Attention</div><span class="badge '+(portN.length?'bg-red':'bg-green')+'">'+portN.length+'</span></div><div class="card-b" style="padding-top:4px">'+attnRows+moreN+'</div></div></div>';
+ return kpis+collap('Charts &amp; analytics — NPD portfolio',row1+row2+gatemap,false);
 }
 function npdCards(){
  let list=npds.filter(n=>(npdGateFilter===''||n.gate===+npdGateFilter)&&(!npdSearch||matchQ(n.name+' '+n.id+' '+n.cust,npdSearch)));
