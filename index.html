@@ -1579,7 +1579,7 @@ const NAV=[
 ];
 let route='home',sub=null;
 function renderNav(){
- $('nav').innerHTML=NAV.filter(n=>n.k!=='users'||isAdmin()).map(n=>'<div class="ni'+(route===n.k?' on':'')+'" onclick="go(\''+n.k+'\')" title="'+n.label+'"><span class="ni-ic" style="background:'+n.color+'26;color:'+n.color+'">'+svg(I[n.icon])+'</span><span class="lbl">'+n.label+'</span><span class="chev">'+svg(I.arrow)+'</span></div>').join('');
+ $('nav').innerHTML=NAV.filter(n=>hasModuleAccess(n.k)).map(n=>'<div class="ni'+(route===n.k?' on':'')+'" onclick="go(\''+n.k+'\')" title="'+n.label+'"><span class="ni-ic" style="background:'+n.color+'26;color:'+n.color+'">'+svg(I[n.icon])+'</span><span class="lbl">'+n.label+'</span><span class="chev">'+svg(I.arrow)+'</span></div>').join('');
 }
 function crumb(){
  const n=NAV.find(x=>x.k===route);
@@ -1605,6 +1605,7 @@ function applyDeepLinkFromHash(){
 function render(){
  if(!CURRENT_USER){document.body.classList.add('locked');return;}
  applyDeepLinkFromHash();
+ if(!hasModuleAccess(route)){route='home';sub=null;}
  const af=document.activeElement;
  const keepFocus=!!(af&&af.id==='gsearch');
  const cpos=keepFocus?[af.selectionStart,af.selectionEnd]:null;
@@ -1651,7 +1652,7 @@ function tile(o){
 // ════════════════════════════ DASHBOARD ════════════════════════════
 function viewHome(){
  const name=(CURRENT_USER&&CURRENT_USER.name)||'';
- const tiles=NAV.filter(n=>n.k!=='home'&&(n.k!=='users'||isAdmin())).map(n=>
+ const tiles=NAV.filter(n=>n.k!=='home'&&hasModuleAccess(n.k)).map(n=>
    '<div class="home-tile" onclick="go(\''+n.k+'\')">'
    +'<span class="home-tile-ic" style="background:'+n.color+'1c;color:'+n.color+'">'+svg(I[n.icon])+'</span>'
    +'<div class="home-tile-lbl">'+n.label+'</div>'
@@ -4073,6 +4074,21 @@ function loadUsers(){
 function saveUsers(){try{localStorage.setItem(U_KEY,JSON.stringify(users));localStorage.setItem(U_VER,SEED_VERSION);}catch(e){}saveState();}
 function findUser(u){u=(u||'').trim().toLowerCase();return users.find(x=>x.user.toLowerCase()===u||(x.email||'').toLowerCase()===u);}
 function isAdmin(){return CURRENT_USER&&CURRENT_USER.role==='admin';}
+const MODULE_NAV=NAV.filter(n=>n.k!=='home'&&n.k!=='users');
+function hasModuleAccess(key){
+ if(!CURRENT_USER)return false;
+ if(key==='home')return true;
+ if(key==='users')return isAdmin();
+ if(isAdmin())return true;
+ const u=users.find(x=>x.user===CURRENT_USER.user);
+ if(!u||!Array.isArray(u.modules))return true; // not configured yet → unrestricted (back-compat default)
+ return u.modules.includes(key);
+}
+function moduleCbHtml(selected){const set=selected?new Set(selected):null;
+ return MODULE_NAV.map(n=>'<label class="cbopt"><input type="checkbox" class="mod-cb" value="'+n.k+'" '+((!set||set.has(n.k))?'checked':'')+'> '+n.label+'</label>').join('');
+}
+function setAllModCbs(on){document.querySelectorAll('.mod-cb').forEach(c=>c.checked=on);}
+function readModCbs(){return Array.from(document.querySelectorAll('.mod-cb:checked')).map(c=>c.value);}
 function userNames(){return users.map(u=>u.name).filter(Boolean);}
 function ownerOpts(cur){cur=cur||'';const names=userNames().slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));let o='<option value="">— Unassigned —</option>';if(cur&&names.indexOf(cur)<0)o+='<option value="'+esc(cur)+'" selected>'+esc(cur)+' (not in list)</option>';o+=names.map(n=>'<option'+(n===cur?' selected':'')+'>'+esc(n)+'</option>').join('');return o;}
 function cmpVals(a,b,dir){const ae=(a===null||a===undefined||a==='');const be=(b===null||b===undefined||b==='');if(ae&&be)return 0;if(ae)return 1;if(be)return -1;if(typeof a==='string'&&typeof b==='string')return a.toLowerCase().localeCompare(b.toLowerCase())*dir;return (a<b?-1:a>b?1:0)*dir;}
@@ -4101,11 +4117,13 @@ function viewUsers(){if(!isAdmin())return '<div class="empty">Admins only.</div>
  if(userSearch){idx=idx.filter(o=>matchQ(o.u.name+' '+o.u.user+' '+(o.u.email||'')+' '+(o.u.dept||'')+' '+o.u.role,userSearch));}
  const val=(u)=>({name:u.name,user:u.user,email:u.email,dept:u.dept,role:u.role})[userSort]||'';
  idx.sort((a,b)=>cmpVals(val(a.u),val(b.u),userSortDir));
+ const accessLbl=u=>{if(u.role==='admin')return '<span class="mut">All (admin)</span>';if(!Array.isArray(u.modules))return '<span class="mut">All</span>';return u.modules.length+' / '+MODULE_NAV.length;};
  const rows=idx.map(({u,i})=>'<tr><td><div style="display:flex;align-items:center;gap:9px"><div class="ub-av" style="width:28px;height:28px">'+initials(u.name)+'</div><b style="font-size:12.5px">'+esc(u.name)+'</b></div></td>'
    +'<td style="font-family:monospace;font-size:12px">'+esc(u.user)+'</td>'
    +'<td style="font-size:12px">'+(u.email?esc(u.email):'<span class="mut">—</span>')+'</td>'
    +'<td style="font-size:12px">'+(u.dept?esc(u.dept):'<span class="mut">—</span>')+'</td>'
    +'<td><span class="badge '+(u.role==='admin'?'bg-purple':'bg-gray')+'">'+esc(u.role)+'</span></td>'
+   +'<td style="font-size:12px">'+accessLbl(u)+'</td>'
    +'<td style="text-align:right;white-space:nowrap"><button class="btn b-gho b-sm" onclick="editUserModal('+i+')">Edit</button> <button class="btn b-gho b-sm" onclick="resetPw('+i+')">Reset password</button> '
      +(u.user===CURRENT_USER.user?'<span class="mut" style="font-size:10px;padding:0 8px">(you)</span>':'<button class="btn b-gho b-sm" style="color:var(--red)" onclick="delUser('+i+')">Remove</button>')+'</td></tr>').join('');
  const sh=(l,k)=>sortTh(l,k,userSort,userSortDir,'userSortBy');
@@ -4120,7 +4138,7 @@ function viewUsers(){if(!isAdmin())return '<div class="empty">Admins only.</div>
    +tile({ico:'grid',color:'#0891b2',tint:'#cffafe',val:new Set(users.map(u=>u.dept).filter(Boolean)).size,lbl:'Departments'})
  +'</div>'
  +'<div class="card" style="margin-bottom:12px"><div class="card-b" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="search" style="min-width:260px">'+svg(I.search)+'<input placeholder="Search name, username, email, department…" value="'+esc(userSearch)+'" id="gsearch" oninput="userSearch=this.value;render()"></div><select class="fsel" onchange="userSetSort(this.value)"><option value="">Sort: Default</option>'+Object.keys(USER_SORT_MAP_G).map(o=>'<option'+(userSortLabel()===o?' selected':'')+'>'+o+'</option>').join('')+'</select><span class="mut" style="font-size:11.5px">Showing '+idx.length+' of '+users.length+' · click a column or use the dropdown to sort</span></div></div>'
- +'<div class="card"><table class="tbl"><thead><tr>'+sh('Name','name')+sh('Username','user')+sh('Email','email')+sh('Department','dept')+sh('Role','role')+'<th style="text-align:right">Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+ +'<div class="card"><div class="tblwrap"><table class="tbl"><thead><tr>'+sh('Name','name')+sh('Username','user')+sh('Email','email')+sh('Department','dept')+sh('Role','role')+'<th>Module Access</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
  +deptDatalist();}
 function addUserModal(){
  modal('<div class="modal-h"><div class="mt">Add User</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
@@ -4130,13 +4148,18 @@ function addUserModal(){
  +'<div class="fl"><label>Department</label><input id="nu-dept" list="deptlist" placeholder="e.g. NPD"></div></div>'
  +'<div class="fg2" style="margin-top:10px"><div class="fl"><label>Role</label><select id="nu-role"><option value="member">Member (use modules)</option><option value="admin">Admin (also manage users)</option></select></div>'
  +'<div class="fl"><label>Password</label><input id="nu-pass" type="text" placeholder="set a password"></div></div>'
+ +'<div class="fl" id="nu-modwrap" style="margin-top:10px"><label>Module Access <span style="font-weight:400;color:var(--t3)">(unchecked = hidden from this user)</span></label>'
+ +'<div class="cbrow" style="max-height:170px;overflow:auto;border:1px solid var(--bd2);border-radius:8px;padding:9px 11px">'+moduleCbHtml(null)+'</div>'
+ +'<div style="margin-top:6px;display:flex;gap:14px"><span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="setAllModCbs(true)">Select all</span><span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="setAllModCbs(false)">Clear all</span></div></div>'
  +'<p style="font-size:11px;color:var(--t3);margin-top:10px">Share the username/email &amp; password with the person. They can sign in from any copy of the file once you embed users.</p>'
  +deptDatalist()
- +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveNewUser()">Add User</button></div>');}
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveNewUser()">Add User</button></div>');
+ setTimeout(()=>{const sel=$('nu-role');if(sel)sel.addEventListener('change',function(){$('nu-modwrap').style.display=this.value==='admin'?'none':'block';});},0);}
 async function saveNewUser(){const name=$('nu-name').value.trim(),user=$('nu-user').value.trim(),email=$('nu-email').value.trim(),dept=$('nu-dept').value.trim(),role=$('nu-role').value,pass=$('nu-pass').value;
  if(!name||!user||!pass){toast('Name, username and password are required');return;}
  if(findUser(user)||(email&&findUser(email))){toast('That username or email already exists');return;}
- const hash=await sha256(pass);users.push({user,name,email,dept,role,hash});saveUsers();closeModal();render();toast('User added');}
+ const modules=readModCbs();
+ const hash=await sha256(pass);users.push({user,name,email,dept,role,hash,modules});saveUsers();closeModal();render();toast('User added');}
 function editUserModal(i){const u=users[i];if(!u)return;
  modal('<div class="modal-h"><div class="mt">Edit User</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fg2"><div class="fl"><label>Full Name</label><input id="eu-name" value="'+esc(u.name)+'"></div>'
@@ -4144,22 +4167,27 @@ function editUserModal(i){const u=users[i];if(!u)return;
  +'<div class="fg2" style="margin-top:10px"><div class="fl"><label>Email ID</label><input id="eu-email" type="email" value="'+esc(u.email||'')+'" autocapitalize="off"></div>'
  +'<div class="fl"><label>Department</label><input id="eu-dept" list="deptlist" value="'+esc(u.dept||'')+'"></div></div>'
  +'<div class="fl" style="margin-top:10px"><label>Role</label><select id="eu-role"><option value="member"'+(u.role!=='admin'?' selected':'')+'>Member (use modules)</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Admin (also manage users)</option></select></div>'
+ +'<div class="fl" id="eu-modwrap" style="margin-top:10px;'+(u.role==='admin'?'display:none':'')+'"><label>Module Access <span style="font-weight:400;color:var(--t3)">(unchecked = hidden from this user)</span></label>'
+ +'<div class="cbrow" style="max-height:170px;overflow:auto;border:1px solid var(--bd2);border-radius:8px;padding:9px 11px">'+moduleCbHtml(u.modules)+'</div>'
+ +'<div style="margin-top:6px;display:flex;gap:14px"><span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="setAllModCbs(true)">Select all</span><span style="font-size:11px;color:var(--acc);cursor:pointer" onclick="setAllModCbs(false)">Clear all</span></div></div>'
  +'<p style="font-size:11px;color:var(--t3);margin-top:10px">To change the password use “Reset password” on the list.</p>'
  +deptDatalist()
- +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveEditUser('+i+')">Save Changes</button></div>');}
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveEditUser('+i+')">Save Changes</button></div>');
+ setTimeout(()=>{const sel=$('eu-role');if(sel)sel.addEventListener('change',function(){$('eu-modwrap').style.display=this.value==='admin'?'none':'block';});},0);}
 function saveEditUser(i){const u=users[i];if(!u)return;const name=$('eu-name').value.trim(),user=$('eu-user').value.trim(),email=$('eu-email').value.trim(),dept=$('eu-dept').value.trim(),role=$('eu-role').value;
  if(!name||!user){toast('Name and username are required');return;}
  const clash=users.find((x,j)=>j!==i&&(x.user.toLowerCase()===user.toLowerCase()||(email&&(x.email||'').toLowerCase()===email.toLowerCase())));
  if(clash){toast('Another user already has that username or email');return;}
  if(u.role==='admin'&&role!=='admin'&&users.filter(x=>x.role==='admin').length<=1){toast('Keep at least one admin');return;}
- const wasSelf=u.user===CURRENT_USER.user;u.name=name;u.user=user;u.email=email;u.dept=dept;u.role=role;saveUsers();
+ const wasSelf=u.user===CURRENT_USER.user;u.name=name;u.user=user;u.email=email;u.dept=dept;u.role=role;u.modules=readModCbs();saveUsers();
  if(wasSelf){CURRENT_USER={user:u.user,name:u.name,role:u.role};try{localStorage.setItem(S_KEY,u.user);}catch(e){}}
  closeModal();render();toast('User updated');}
 async function resetPw(i){const u=users[i];if(!u)return;const np=prompt('Set a new password for '+u.name+':');if(!np)return;u.hash=await sha256(np);saveUsers();toast('Password updated for '+u.name);}
 function delUser(i){const u=users[i];if(!u)return;if(u.user===CURRENT_USER.user){toast('You cannot remove your own account');return;}
  if(users.filter(x=>x.role==='admin').length<=1&&u.role==='admin'){toast('Keep at least one admin');return;}
  if(!confirm('Remove access for '+u.name+' ('+u.user+')?'))return;users.splice(i,1);saveUsers();render();}
-function embedUsers(){const esc1=s=>String(s||'').replace(/'/g,"");const lines=users.map(u=>" {user:'"+esc1(u.user)+"',name:'"+esc1(u.name)+"',email:'"+esc1(u.email)+"',dept:'"+esc1(u.dept)+"',role:'"+u.role+"',hash:'"+u.hash+"'}").join(',\n');
+function embedUsers(){const esc1=s=>String(s||'').replace(/'/g,"");const modsLit=u=>Array.isArray(u.modules)?'['+u.modules.map(m=>"'"+esc1(m)+"'").join(',')+']':'null';
+ const lines=users.map(u=>" {user:'"+esc1(u.user)+"',name:'"+esc1(u.name)+"',email:'"+esc1(u.email)+"',dept:'"+esc1(u.dept)+"',role:'"+u.role+"',hash:'"+u.hash+"',modules:"+modsLit(u)+"}").join(',\n');
  const block='/* PROJEXA-USERS-START */\nconst SEED_USERS=[\n'+lines+'\n];\n/* PROJEXA-USERS-END */';
  modal('<div class="modal-h"><div class="mt">Embed users in the file</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<p style="font-size:12px;color:var(--t2);line-height:1.6;margin:0 0 10px">To let your team sign in from the shared file, open the HTML in a text editor, find the block between <code>PROJEXA-USERS-START</code> and <code>PROJEXA-USERS-END</code>, replace it with the text below, save, and re-share the file.</p>'
