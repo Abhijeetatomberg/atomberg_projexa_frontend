@@ -1258,6 +1258,44 @@ async function readAttachInputsAndUpload(meta){
  if(title||link)return {name:title||link,link};
  return null;
 }
+// ── Project (NPD/POC) FG / 3D model image, and BOM part images — reuse the same S3-backed attachment upload ──
+function imgUrl(obj){if(!obj)return '';return obj.id?attachmentUrl(obj.id):(obj.link||'');}
+function uploadProjImage(kind,id){
+ modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Project Image</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+ +attachModalBody('e.g. FG photo or 3D render')
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveProjImage(\''+kind+'\',\''+id+'\')">Save Image</button></div>');}
+async function saveProjImage(kind,id){const list=kind==='poc'?pocs:npds;const p=list.find(x=>x.id===id);if(!p)return;
+ let rec;try{rec=await readAttachInputsAndUpload({module:kind+'-image',refId:id});}catch(e){toast(e.message||'Upload failed','error');return;}
+ if(!rec){toast('Choose an image or paste a link');return;}
+ if(p.image&&p.image.id)deleteAttachmentRemote(p.image.id);
+ p.image=rec;saveState();closeModal();render();toast('Image updated','success');}
+function removeProjImage(kind,id){const list=kind==='poc'?pocs:npds;const p=list.find(x=>x.id===id);if(!p||!p.image)return;
+ if(!confirm('Remove this image?'))return;if(p.image.id)deleteAttachmentRemote(p.image.id);p.image=null;saveState();render();}
+function projImageBox(kind,p,size){size=size||64;const url=imgUrl(p.image);
+ return '<div style="position:relative;width:'+size+'px;height:'+size+'px;flex:none">'
+  +'<div onclick="uploadProjImage(\''+kind+'\',\''+p.id+'\')" title="'+(url?'Click to change image':'Click to add an image')+'" style="width:100%;height:100%;border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid var(--bd);background:var(--card2);display:flex;align-items:center;justify-content:center">'
+   +(url?'<img src="'+esc(url)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="color:var(--t3)">'+svg(I.box)+'</span>')
+  +'</div>'
+  +(url?'<span onclick="event.stopPropagation();removeProjImage(\''+kind+'\',\''+p.id+'\')" title="Remove image" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)">×</span>':'')
+ +'</div>';}
+function uploadBomImage(bid){
+ modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Part Image</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+ +attachModalBody('e.g. part photo')
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveBomImage('+bid+')">Save Image</button></div>');}
+async function saveBomImage(bid){const b=bomParts.find(x=>x.id===bid);if(!b)return;
+ let rec;try{rec=await readAttachInputsAndUpload({module:'bom-image',refId:String(bid)});}catch(e){toast(e.message||'Upload failed','error');return;}
+ if(!rec){toast('Choose an image or paste a link');return;}
+ if(b.image&&b.image.id)deleteAttachmentRemote(b.image.id);
+ b.image=rec;saveState();closeModal();render();toast('Image updated','success');}
+function removeBomImage(bid){const b=bomParts.find(x=>x.id===bid);if(!b||!b.image)return;
+ if(!confirm('Remove this part image?'))return;if(b.image.id)deleteAttachmentRemote(b.image.id);b.image=null;saveState();render();}
+function bomImageCell(b,size){size=size||40;const url=imgUrl(b.image);
+ return '<div style="position:relative;width:'+size+'px;height:'+size+'px" onclick="event.stopPropagation()">'
+  +'<div onclick="uploadBomImage('+b.id+')" title="'+(url?'Click to change image':'Click to add an image')+'" style="width:100%;height:100%;border-radius:6px;overflow:hidden;cursor:pointer;border:1px solid var(--bd);background:var(--card2);display:flex;align-items:center;justify-content:center">'
+   +(url?'<img src="'+esc(url)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="color:var(--t3);font-size:14px">+</span>')
+  +'</div>'
+  +(url?'<span onclick="event.stopPropagation();removeBomImage('+b.id+')" title="Remove image" style="position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:var(--red);color:#fff;font-size:9px;line-height:14px;text-align:center;cursor:pointer">×</span>':'')
+ +'</div>';}
 let _t=null;function autosave(){clearTimeout(_t);_t=setTimeout(saveState,500);}
 
 // ════════════════════ DATABASE SYNC (production — always connected) ════════════════════
@@ -2001,7 +2039,7 @@ function viewNpdDetail(id){
      +'</div>'
    +'</div>'
    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">'
-     +'<h1>'+esc(n.name)+'</h1>'
+     +'<div style="display:flex;align-items:center;gap:14px">'+projImageBox('npd',n)+'<h1>'+esc(n.name)+'</h1></div>'
      +'<div style="display:flex;gap:10px;align-items:center">'
        +'<span class="badge '+(n.gate===0?'bg-amber':'bg-blue')+'" style="font-size:12px">'+GATE_LABELS[n.gate]+'</span>'+reviewBtn
      +'</div>'
@@ -2289,6 +2327,7 @@ function npdBomTab(n){
 function bomMasterTable(list,full){
  const rows=list.map(b=>{const prog=bomProgress(b);
   return '<tr onclick="bomDetail('+b.id+')" style="cursor:pointer">'
+   +'<td>'+bomImageCell(b)+'</td>'
    +'<td class="mut">'+(b.pno||'—')+'</td>'
    +(full?'<td class="mut">'+esc(b.cat)+'</td><td class="lnk" style="white-space:nowrap">'+esc(b.proj)+'</td>':'')
    +'<td style="min-width:200px;white-space:normal"><b>'+esc(b.desc)+'</b></td>'
@@ -2304,8 +2343,8 @@ function bomMasterTable(list,full){
    +'<td>'+bomFpaBadge(b.fpaStatus)+'</td>'
    +'</tr>';
  }).join('');
- const cols='<th>Part No</th>'+(full?'<th>Cat</th><th>Project</th>':'')+'<th>Description</th><th>Type</th><th>Qty</th><th>New/Old</th><th>Overall Status</th><th>Milestones</th><th>Sourcing</th><th>Commodity</th><th>Process</th><th>Part / Tool Maker</th><th>FPA</th>';
- return '<div class="card"><div class="tblwrap"><table class="tbl bomtbl" style="min-width:'+(full?'1180':'1020')+'px"><thead><tr>'+cols+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(full?14:12)+'" class="empty">No BOM parts yet. Upload an Excel (your tracker format) or add a part.</td></tr>')+'</tbody></table></div></div>';
+ const cols='<th>Image</th><th>Part No</th>'+(full?'<th>Cat</th><th>Project</th>':'')+'<th>Description</th><th>Type</th><th>Qty</th><th>New/Old</th><th>Overall Status</th><th>Milestones</th><th>Sourcing</th><th>Commodity</th><th>Process</th><th>Part / Tool Maker</th><th>FPA</th>';
+ return '<div class="card"><div class="tblwrap"><table class="tbl bomtbl" style="min-width:'+(full?'1230':'1070')+'px"><thead><tr>'+cols+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(full?15:13)+'" class="empty">No BOM parts yet. Upload an Excel (your tracker format) or add a part.</td></tr>')+'</tbody></table></div></div>';
 }
 function bomDetail(id){const b=bomParts.find(x=>x.id===id);if(!b)return;ensureBomRow(b);
  const fld=(lbl,key,opts)=>opts?'<div class="fl"><label>'+lbl+'</label><select onchange="setBomField('+id+',\''+key+'\',this.value)">'+opts.map(o=>'<option'+((b[key]||'')===o?' selected':'')+'>'+(o||'—')+'</option>').join('')+'</select></div>':'<div class="fl"><label>'+lbl+'</label><input value="'+esc(b[key]||'')+'" onchange="setBomField('+id+',\''+key+'\',this.value)"></div>';
@@ -2316,6 +2355,7 @@ function bomDetail(id){const b=bomParts.find(x=>x.id===id);if(!b)return;ensureBo
     +'<td>'+(st==='late'?'<span class="badge bg-red">Late</span>':st==='ok'?'<span class="badge bg-green">On time</span>':st==='overdue'?'<span class="badge bg-amber">Overdue</span>':st==='pending'?'<span class="badge bg-gray">Planned</span>':'<span class="mut">—</span>')+'</td></tr>';
  }).join('');
  modal('<div class="modal-h"><div class="mt">'+svg(I.box)+esc(b.pno||'Part')+' · '+esc(b.desc)+'</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b" style="max-width:760px">'
+  +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'+bomImageCell(b,88)+'<span class="mut" style="font-size:11.5px">Click the image to add or change a photo of this part</span></div>'
   +'<div class="bom-sec">Part details</div>'
   +'<div class="charter-grid">'
    +fld('Part No','pno')+fld('Overall Status','ost',BOM_OST)
@@ -2622,6 +2662,7 @@ function bomDetailSheet(){
  const txt=(id,field,cur,cls)=>ro?'<span class="roc">'+esc(cur||'')+'</span>':'<textarea class="txw" onchange="setBomField('+id+',\''+field+'\',this.value)">'+esc(cur||'')+'</textarea>';
  // header rows
  let h1='<tr>'
+  +'<th rowspan="2" style="width:56px">Image</th>'
   +'<th class="bx-id" rowspan="2">Part No</th><th class="bx-id2" rowspan="2">Description</th>'
   +'<th class="st-def" rowspan="2">Type</th><th class="st-def" rowspan="2">Qty</th><th class="st-def" rowspan="2">New/Old</th><th class="st-def" rowspan="2">Overall Status</th><th class="st-def" rowspan="2">Sourcing</th><th class="st-def" rowspan="2">Tool Maker</th><th class="st-def" rowspan="2">Part Maker</th>';
  BOM_MS.forEach(m=>{h1+='<th class="st-'+BOM_STAGE[m[0]]+'" colspan="2">'+m[1]+'</th>';});
@@ -2644,6 +2685,7 @@ function bomDetailSheet(){
      if(ex&&(field==='fpaStatus'||field==='fpaNumber')) return dashTd(cls);
      return '<td class="'+cls+'">'+ctrl+'</td>';};
    let r='<tr class="'+((ex||done)?'bx-lockrow ':'')+sc+'">';
+   r+='<td onclick="event.stopPropagation()">'+bomImageCell(b)+'</td>';
    r+=(ro||(done&&!edit))?roTd('bx-id',b.pno):'<td class="bx-id"><textarea class="txw" onchange="setBomField('+b.id+',\'pno\',this.value)">'+esc(b.pno||'')+'</textarea></td>';
    r+=(ro||(done&&!edit))?'<td class="bx-id2"><span class="roc">'+esc(b.desc||'')+'</span></td>':'<td class="bx-id2"><textarea class="descw" onchange="setBomField('+b.id+',\'desc\',this.value)">'+esc(b.desc||'')+'</textarea></td>';
    r+=defCell('st-def','type',selCtrl('type',BOM_TYPE,b.type),b.type);
@@ -2672,7 +2714,7 @@ function bomDetailSheet(){
    +'<div class="bom-stagekey"><span class="sk st-def">Definition</span><span class="sk st-design">Design</span><span class="sk st-tool">Tooling</span><span class="sk st-val">Validation</span><span class="sk st-fpa">FPA &amp; Specs</span></div>'
    +'<div class="bom-stagekey" style="margin-left:auto"><span style="font-size:10px;color:var(--t3);margin-right:2px">Status:</span><span class="sk2" style="background:#e3f8ec">Existing</span><span class="sk2" style="background:#9ff0bf">Completed</span><span class="sk2" style="background:#9ff0bf;color:#c0211f">Delayed but Completed</span><span class="sk2" style="background:#fde0e0">Delayed</span><span class="sk2" style="background:#f6a6a6">At Risk</span></div></div>'
    +(ro?'<div style="font-size:11.5px;color:var(--t2);margin:0 0 9px">Read-only overview of <b>'+list.length+'</b> parts across all projects — coloured by status. <b>Select a project</b> above to edit parts inline (or use <b>Add Part</b> — it lets you pick the project).</div>':'<div style="font-size:11.5px;color:var(--t2);margin:0 0 9px">In-process parts are editable. <b>Completed</b> rows are locked — '+(isAdmin()?'you are an admin, so you can still edit them and change status.':'only an admin can edit them or change their status.')+'</div>')
- +'<div class="bom-fullbleed"><div class="card" style="padding:0"><div class="bx-wrap"><table class="bx"><thead>'+h1+h2+'</thead><tbody>'+(tooMany?'<tr><td colspan="41" class="empty" style="position:static;padding:34px">Showing all projects would load <b>'+list.length+'</b> parts at once. Pick a project above to edit its dates quickly, or use search.</td></tr>':(rows||'<tr><td colspan="41" class="empty">No parts. Add a part or upload an Excel.</td></tr>'))+'</tbody></table></div></div></div>';
+ +'<div class="bom-fullbleed"><div class="card" style="padding:0"><div class="bx-wrap"><table class="bx"><thead>'+h1+h2+'</thead><tbody>'+(tooMany?'<tr><td colspan="42" class="empty" style="position:static;padding:34px">Showing all projects would load <b>'+list.length+'</b> parts at once. Pick a project above to edit its dates quickly, or use search.</td></tr>':(rows||'<tr><td colspan="42" class="empty">No parts. Add a part or upload an Excel.</td></tr>'))+'</tbody></table></div></div></div>';
 }
 
 // ════════════════════════════ LINE READINESS ════════════════════════════
@@ -2915,7 +2957,7 @@ function viewPocDetail(id){const p=pocs.find(x=>x.id===id);if(!p)return '<div cl
      +'</div>'
    +'</div>'
    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">'
-     +'<h1>'+esc(p.name)+'</h1>'
+     +'<div style="display:flex;align-items:center;gap:14px">'+projImageBox('poc',p)+'<h1>'+esc(p.name)+'</h1></div>'
      +'<div style="display:flex;gap:10px;align-items:center">'
        +'<span class="badge bg-purple" style="font-size:12px">'+POC_STAGE_LABELS[p.stage]+'</span>'+btn
      +'</div>'
