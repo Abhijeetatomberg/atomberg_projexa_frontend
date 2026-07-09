@@ -2028,7 +2028,7 @@ function viewNpdDetail(id){
  else reviewBtn='<button class="btn b-pri b-sm" onclick="gateReview(\''+id+'\')">'+(n.gate===0?'Conduct KO':'Advance to Next Phase')+' →</button>';
  const admin=isAdmin();
  return ''
- +'<div class="dethead" style="flex-direction:column;align-items:stretch;gap:2px">'
+ +'<div class="dethead" style="flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px">'
    +'<div style="display:flex;justify-content:space-between;align-items:center">'
      +'<div class="back" onclick="sub=null;render()">'+svg(I.arrow)+' Back to projects</div>'
      +'<div style="display:flex;gap:18px">'
@@ -2947,7 +2947,7 @@ function viewPocDetail(id){const p=pocs.find(x=>x.id===id);if(!p)return '<div cl
  else btn='<button class="btn b-pri b-sm" onclick="pocAdvance(\''+id+'\')">'+(p.stage===0?'Complete KO':'Advance to Next Phase')+' →</button>';
  const admin=isAdmin();
  return ''
- +'<div class="dethead" style="flex-direction:column;align-items:stretch;gap:2px">'
+ +'<div class="dethead" style="flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px">'
    +'<div style="display:flex;justify-content:space-between;align-items:center">'
      +'<div class="back" onclick="sub=null;render()">'+svg(I.arrow)+' Back to POC projects</div>'
      +'<div style="display:flex;gap:18px">'
@@ -3839,7 +3839,7 @@ function viewTrialDetail(id){const t=trials.find(x=>x.id===id);if(!t)return '<di
  const filesHtml=(t.files||[]).map((fl,fi)=>'<span class="chip-file">'+svg(I.doc)+'<span class="cf-open" onclick="openTrialFile(\''+id+'\','+fi+')">'+esc(fl.name)+'</span>'+(fl.id?'<span class="cf-tag">Uploaded</span>':(fl.link?'<span class="cf-tag" style="background:#dbeafe;color:#1e40af">link</span>':''))+(editable?'<span class="xf" onclick="delTrialFile(\''+id+'\','+fi+')">✕</span>':'')+'</span>').join('');
  const ppcEmail=PPC_EMAIL_BY_SECTION[t.section]||'';
  return ''
- +'<div class="dethead" style="flex-direction:column;align-items:stretch;gap:2px">'
+ +'<div class="dethead" style="flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px">'
    +'<div style="display:flex;justify-content:space-between;align-items:center">'
      +'<div class="back" onclick="sub=null;render()">'+svg(I.arrow)+' Back to Trial Tracker</div>'
      +'<div style="display:flex;gap:18px">'
