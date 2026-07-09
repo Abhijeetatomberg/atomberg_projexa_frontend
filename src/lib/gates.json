@@ -1,0 +1,1574 @@
+{
+ "GATES": [
+  {
+   "g": "AB-0",
+   "name": "POC Approval",
+   "t": [
+    {
+     "n": "1.1",
+     "name": "POC Project Kick-Off",
+     "dur": 2
+    },
+    {
+     "n": "1.2",
+     "name": "Problem Statement / Opportunity (Spec, Drawing, Samples, Regulatory & Compliance requirements)",
+     "dur": 5
+    },
+    {
+     "n": "1.3",
+     "name": "Benchmarking & Report Preparation",
+     "dur": 3
+    },
+    {
+     "n": "1.4",
+     "name": "Preliminary Spec Finalization — a) Mechanical  b) Electrical",
+     "dur": 3
+    },
+    {
+     "n": "1.5",
+     "name": "Market Potential Document (current business contribution across competitors)",
+     "dur": 3
+    },
+    {
+     "n": "1.6",
+     "name": "Preliminary Business Case Approval",
+     "dur": 5
+    },
+    {
+     "n": "1.7",
+     "name": "Initial Risk Register Creation",
+     "dur": 3
+    },
+    {
+     "n": "1.8",
+     "name": "Technology Readiness Level (TRL) Assessment",
+     "dur": 3
+    },
+    {
+     "n": "1.9",
+     "name": "Preliminary IP / Freedom to Operate (FTO) Check",
+     "dur": 3
+    },
+    {
+     "n": "1.10",
+     "name": "Make vs. Buy Decision (high-level)",
+     "dur": 3
+    },
+    {
+     "n": "1.11",
+     "name": "Alpha Build",
+     "dur": 3
+    },
+    {
+     "n": "1.11.1",
+     "name": "— Preliminary BOM Release",
+     "dur": 3
+    },
+    {
+     "n": "1.11.2",
+     "name": "— 3D & 2D Drawing Release",
+     "dur": 5
+    },
+    {
+     "n": "1.11.3",
+     "name": "— Part Procurement, Proto Development (Wire-cut & RPT)",
+     "dur": 21
+    },
+    {
+     "n": "1.11.4",
+     "name": "— Motor Assembly",
+     "dur": 7
+    },
+    {
+     "n": "1.11.5",
+     "name": "— Proto Testing",
+     "dur": 21
+    },
+    {
+     "n": "1.11.6",
+     "name": "— Report Preparation & Review with CFT",
+     "dur": 3
+    },
+    {
+     "n": "1.11.7",
+     "name": "— Sample Submission to Customer for Approval",
+     "dur": 21
+    },
+    {
+     "n": "1.12",
+     "name": "BETA build , if required  (Will follow the same processes as per Alpha build)",
+     "dur": 3
+    },
+    {
+     "n": "1.13",
+     "name": "Prototype Control Plan (proto build inspection plan)",
+     "dur": 21
+    },
+    {
+     "n": "1.14",
+     "name": "Customer Approval on POC / Go-ahead for Tooled-up Samples",
+     "dur": 21
+    }
+   ]
+  },
+  {
+   "g": "AB-1",
+   "name": "Project Initiation",
+   "t": [
+    {
+     "n": "2.1",
+     "name": "Project KO with CFT",
+     "dur": 2
+    },
+    {
+     "n": "2.2",
+     "name": "Lessons Learned Review (from similar past projects)",
+     "dur": 3
+    },
+    {
+     "n": "2.3",
+     "name": "Regulatory & Compliance Requirements Confirmation",
+     "dur": 3
+    },
+    {
+     "n": "2.4",
+     "name": "Compliance Matrix — map each requirement to a design parameter",
+     "dur": 3
+    },
+    {
+     "n": "2.5",
+     "name": "Customer-Specific Requirements (CSR) capture & matrix",
+     "dur": 3
+    },
+    {
+     "n": "2.6",
+     "name": "NDA Sign-Off with Customer",
+     "dur": 3
+    },
+    {
+     "n": "2.7",
+     "name": "Convert VOC into Final Product Specification",
+     "dur": 3
+    },
+    {
+     "n": "2.8",
+     "name": "Project Charter Preparation & Approval",
+     "dur": 3
+    },
+    {
+     "n": "2.9",
+     "name": "PPAP Level Agreement with Customer (documented)",
+     "dur": 3
+    },
+    {
+     "n": "2.10",
+     "name": "Customer Qualification Test Plan",
+     "dur": 30
+    },
+    {
+     "n": "2.11",
+     "name": "Product Validation & Verification Plan (DVP/PVP)",
+     "dur": 30
+    },
+    {
+     "n": "2.12",
+     "name": "Prototype Build Plan (rounds, triggers, quantities)",
+     "dur": 21
+    },
+    {
+     "n": "2.13",
+     "name": "Project & Product Cost Estimation",
+     "dur": 5
+    },
+    {
+     "n": "2.14",
+     "name": "Reliability Targets — field history & warranty of similar products",
+     "dur": 3
+    },
+    {
+     "n": "2.15",
+     "name": "Initial PFD Release (preliminary)",
+     "dur": 5
+    },
+    {
+     "n": "2.16",
+     "name": "Identification of New Processes & Equipment",
+     "dur": 5
+    },
+    {
+     "n": "2.17",
+     "name": "Technical Feasibility Report (product level)",
+     "dur": 3
+    },
+    {
+     "n": "2.18",
+     "name": "Resource Plan (headcount, budget, timeline)",
+     "dur": 3
+    }
+   ]
+  },
+  {
+   "g": "AB-2",
+   "name": "Design Freeze & Supplier Nomination",
+   "t": [
+    {
+     "n": "3.1",
+     "name": "Initial DFMEA Creation",
+     "dur": 5
+    },
+    {
+     "n": "3.2",
+     "name": "CC/SC (Critical/Significant Characteristics) Identification & Declaration",
+     "dur": 3
+    },
+    {
+     "n": "3.3",
+     "name": "Manufacturing / Team Feasibility Commitment (CFT sign-off)",
+     "dur": 3
+    },
+    {
+     "n": "3.4",
+     "name": "Special-Characteristics Flow Matrix (drawing→DFMEA→PFMEA→Control Plan)",
+     "dur": 5
+    },
+    {
+     "n": "3.5",
+     "name": "Product-Safety Characteristics Identification & Sign-off",
+     "dur": 2
+    },
+    {
+     "n": "3.6",
+     "name": "Tolerance Stack-Up / GD&T Review before drawing release",
+     "dur": 5
+    },
+    {
+     "n": "3.7",
+     "name": "2D & 3D Release for Long-Lead-Time Parts",
+     "dur": 45
+    },
+    {
+     "n": "3.8",
+     "name": "Release of 3D & 2D Drawings in PLM — Mechanical",
+     "dur": 5
+    },
+    {
+     "n": "3.9",
+     "name": "Q Mapping & CTQ Document",
+     "dur": 3
+    },
+    {
+     "n": "3.10",
+     "name": "Supplier Identification & Qualification",
+     "dur": 7
+    },
+    {
+     "n": "3.11",
+     "name": "RFQ Initiation & DFM for Tooling Parts",
+     "dur": 7
+    },
+    {
+     "n": "3.12",
+     "name": "RFQ Initiation & DFM for BO Parts",
+     "dur": 7
+    },
+    {
+     "n": "3.13",
+     "name": "Obsolescence Risk Assessment for BO Parts (esp. Electronics)",
+     "dur": 7
+    },
+    {
+     "n": "3.14",
+     "name": "Supplier Finalization & KO for Tooled-up Parts",
+     "dur": 7
+    },
+    {
+     "n": "3.15",
+     "name": "Supplier Finalization & KO for BO Parts",
+     "dur": 7
+    },
+    {
+     "n": "3.16",
+     "name": "Prototype Packaging Development & Approval",
+     "dur": 21
+    },
+    {
+     "n": "3.17",
+     "name": "Packaging Standard Compliance (ISTA / customer-specific)",
+     "dur": 3
+    },
+    {
+     "n": "3.18",
+     "name": "PFD Preparation (detailed)",
+     "dur": 5
+    },
+    {
+     "n": "3.19",
+     "name": "Initial PFMEA Preparation",
+     "dur": 5
+    },
+    {
+     "n": "3.20",
+     "name": "Supplier Matrix",
+     "dur": 7
+    },
+    {
+     "n": "3.21",
+     "name": "Equipment Requirement Identification",
+     "dur": 5
+    },
+    {
+     "n": "3.22",
+     "name": "Floor Plan Estimation",
+     "dur": 5
+    },
+    {
+     "n": "3.23",
+     "name": "Line Layout & Ergonomics / Safety Review",
+     "dur": 5
+    },
+    {
+     "n": "3.24",
+     "name": "Capex Approval for Long-Lead Items",
+     "dur": 45
+    },
+    {
+     "n": "3.25",
+     "name": "Design Review 1 with CFT",
+     "dur": 3
+    }
+   ]
+  },
+  {
+   "g": "AB-3",
+   "name": "Tooling Kick-Off & Process Freeze",
+   "t": [
+    {
+     "n": "4.1",
+     "name": "BOM Freeze Confirmation — locked in PLM/SAP before tooling start",
+     "dur": 5
+    },
+    {
+     "n": "4.2",
+     "name": "Tooling Design Review (TDR) with Vendor — before steel cut",
+     "dur": 3
+    },
+    {
+     "n": "4.3",
+     "name": "PO Release to Tooling Vendors",
+     "dur": 7
+    },
+    {
+     "n": "4.4",
+     "name": "PO Release to BO Parts",
+     "dur": 7
+    },
+    {
+     "n": "4.5",
+     "name": "BOM Cost Finalization & Review",
+     "dur": 5
+    },
+    {
+     "n": "4.6",
+     "name": "PO Release — Machines / Equipment",
+     "dur": 7
+    },
+    {
+     "n": "4.7",
+     "name": "Initial (Pre-Tooling) Control Plan Release with MFTGB List",
+     "dur": 30
+    },
+    {
+     "n": "4.8",
+     "name": "Design & Development of MFTGB for Assembly",
+     "dur": 30
+    },
+    {
+     "n": "4.9",
+     "name": "Vendor Finalization for MFTGB & Machines",
+     "dur": 30
+    },
+    {
+     "n": "4.10",
+     "name": "PO Release to Process MFTGB Vendors",
+     "dur": 30
+    },
+    {
+     "n": "4.11",
+     "name": "Development / Production of All Relevant MFTGB",
+     "dur": 30
+    },
+    {
+     "n": "4.12",
+     "name": "Supplier PPAP Plan Agreement — elements per part agreed formally",
+     "dur": 7
+    }
+   ]
+  },
+  {
+   "g": "AB-4",
+   "name": "First Parts Readiness",
+   "t": [
+    {
+     "n": "5.1",
+     "name": "MBOM Preparation in SAP & Store Inventory Management",
+     "dur": 5
+    },
+    {
+     "n": "5.2",
+     "name": "Artwork Readiness — FG Packaging",
+     "dur": 5
+    },
+    {
+     "n": "5.3",
+     "name": "Pre-Launch Control Plan (elevated inspection defined)",
+     "dur": 5
+    },
+    {
+     "n": "5.4",
+     "name": "T0 Parts Availability — Tooled-up Parts",
+     "dur": 3
+    },
+    {
+     "n": "5.5",
+     "name": "T0 Parts Availability — BO Parts",
+     "dur": 3
+    },
+    {
+     "n": "5.6",
+     "name": "FPA of T0 Parts (First Part Approval)",
+     "dur": 7
+    },
+    {
+     "n": "5.7",
+     "name": "Preliminary Gauge R&R Study on Critical Gauges",
+     "dur": 14
+    },
+    {
+     "n": "5.8",
+     "name": "T0/T1 Final Part Availability Confirmation",
+     "dur": 3
+    },
+    {
+     "n": "5.9",
+     "name": "Gauges & Checking Fixtures Development at Vendor End",
+     "dur": 30
+    },
+    {
+     "n": "5.10",
+     "name": "Line Installation & Commissioning",
+     "dur": 14
+    },
+    {
+     "n": "5.11",
+     "name": "Packaging Trial (physical pack/unpack — no-damage confirmation)",
+     "dur": 3
+    },
+    {
+     "n": "5.12",
+     "name": "Traceability System Readiness Check (barcode / batch / serial)",
+     "dur": 30
+    },
+    {
+     "n": "5.13",
+     "name": "Operator Training Plan Preparation",
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "g": "AB-5",
+   "name": "Assembly, Testing & Validation",
+   "t": [
+    {
+     "n": "6.1",
+     "name": "Assembly on Line with T0 / T1 Parts",
+     "dur": 7
+    },
+    {
+     "n": "6.2",
+     "name": "Product Validation (DVP) — Internal",
+     "dur": 30
+    },
+    {
+     "n": "6.3",
+     "name": "DVP Completion Report — signed test data per DVP line item",
+     "dur": 30
+    },
+    {
+     "n": "6.4",
+     "name": "Reliability Test Sign-Off (against AB1 targets)",
+     "dur": 30
+    },
+    {
+     "n": "6.5",
+     "name": "Part Submission to Customer for Testing",
+     "dur": 30
+    },
+    {
+     "n": "6.6",
+     "name": "Customer Approval on Product & Feedback",
+     "dur": 21
+    },
+    {
+     "n": "6.7",
+     "name": "Design Review 2 with CFT",
+     "dur": 3
+    },
+    {
+     "n": "6.8",
+     "name": "Design Change Based on Customer Feedback (if required)",
+     "dur": 3
+    },
+    {
+     "n": "6.9",
+     "name": "Change Impact Assessment (parts / FMEAs / tests to re-run) before ECN",
+     "dur": 5
+    },
+    {
+     "n": "6.10",
+     "name": "ECN (Engineering Change Notice) , if needed",
+     "dur": 3
+    },
+    {
+     "n": "6.11",
+     "name": "Update of FMEAs if Required",
+     "dur": 5
+    },
+    {
+     "n": "6.12",
+     "name": "Re-test Plan After ECN — confirm DVP tests to re-run",
+     "dur": 30
+    }
+   ]
+  },
+  {
+   "g": "AB-6",
+   "name": "Manufacturing Readiness",
+   "t": [
+    {
+     "n": "7.1",
+     "name": "Final (Production) Control Plan Release",
+     "dur": 5
+    },
+    {
+     "n": "7.2",
+     "name": "SOP Release (all assembly & test operations)",
+     "dur": 30
+    },
+    {
+     "n": "7.3",
+     "name": "5S Audit of Production Area before Ramp-Up",
+     "dur": 30
+    },
+    {
+     "n": "7.4",
+     "name": "Operator Certification on SOPs (sign-off per operator per SOP)",
+     "dur": 5
+    },
+    {
+     "n": "7.5",
+     "name": "Run-at-Rate / Production Demonstration Run at quoted cycle time & rate",
+     "dur": 30
+    },
+    {
+     "n": "7.6",
+     "name": "Error-Proofing (Poka-Yoke) Verification & Challenge Test",
+     "dur": 3
+    },
+    {
+     "n": "7.7",
+     "name": "Preliminary Process Capability Study (Ppk on CC/SC)",
+     "dur": 5
+    },
+    {
+     "n": "7.8",
+     "name": "Ramp-Up Batch Production (500 nos.)",
+     "dur": 30
+    },
+    {
+     "n": "7.9",
+     "name": "SPC & MSA Study",
+     "dur": 5
+    },
+    {
+     "n": "7.10",
+     "name": "Visual Management Board",
+     "dur": 3
+    },
+    {
+     "n": "7.11",
+     "name": "PPAP Approval of Child Parts",
+     "dur": 21
+    },
+    {
+     "n": "7.12",
+     "name": "Ramp-Up Batch Production with ≥ 95% RTY",
+     "dur": 30
+    },
+    {
+     "n": "7.13",
+     "name": "Safe Launch Plan — elevated inspection for first N pieces + reaction plan",
+     "dur": 3
+    },
+    {
+     "n": "7.14",
+     "name": "Customer Witness Build / Run-off (if required)",
+     "dur": 30
+    },
+    {
+     "n": "7.15",
+     "name": "Internal Quality Planning Sign-Off (all APQP elements complete)",
+     "dur": 2
+    },
+    {
+     "n": "7.16",
+     "name": "PPAP Approval from Customer",
+     "dur": 21
+    },
+    {
+     "n": "7.17",
+     "name": "Contingency / Reaction Plan for Out-of-Control Processes (linked to Control Plan)",
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "g": "AB-7",
+   "name": "Production Launch",
+   "t": [
+    {
+     "n": "8.1",
+     "name": "Business Case Review (Actual vs. Planned)",
+     "dur": 5
+    },
+    {
+     "n": "8.2",
+     "name": "NPD Team Formal Handover to Production (signed handover document)",
+     "dur": 3
+    },
+    {
+     "n": "8.3",
+     "name": "Lessons Learned Documentation (full NPD cycle)",
+     "dur": 3
+    },
+    {
+     "n": "8.4",
+     "name": "Open Issues Log — formal closure or approved deviation for all items",
+     "dur": 3
+    },
+    {
+     "n": "8.5",
+     "name": "Customer rejection Reporting Process Activation",
+     "dur": 3
+    },
+    {
+     "n": "8.6",
+     "name": "Supplier Performance Baseline (DPPM, delivery targets per supplier)",
+     "dur": 7
+    },
+    {
+     "n": "8.7",
+     "name": "Production Ramp Plan (volumes by month, first 6 months)",
+     "dur": 30
+    },
+    {
+     "n": "8.8",
+     "name": "Layered Process Audit (LPA) Plan Activation",
+     "dur": 5
+    },
+    {
+     "n": "8.9",
+     "name": "SOP Start — Volume Production Begins",
+     "dur": 5
+    },
+    {
+     "n": "8.10",
+     "name": "Post-Launch Review Schedule — 3-month & 6-month reviews booked",
+     "dur": 3
+    }
+   ]
+  }
+ ],
+ "GATE_EXIT": {
+  "AB0": [
+   {
+    "t": "Customer written approval on POC sample",
+    "fn": ""
+   },
+   {
+    "t": "Preliminary business case approved by management",
+    "fn": ""
+   },
+   {
+    "t": "Risk register created and baselined",
+    "fn": ""
+   },
+   {
+    "t": "TRL level documented and accepted",
+    "fn": ""
+   },
+   {
+    "t": "Preliminary FTO check completed — no blockers",
+    "fn": ""
+   },
+   {
+    "t": "Make vs. Buy decision recorded",
+    "fn": ""
+   },
+   {
+    "t": "Prototype control plan issued for proto build",
+    "fn": ""
+   }
+  ],
+  "AB0.5": [
+   {
+    "t": "Single concept selected and documented (Pugh matrix)",
+    "fn": ""
+   },
+   {
+    "t": "System architecture frozen and signed by DE lead",
+    "fn": ""
+   },
+   {
+    "t": "Subsystem interfaces defined",
+    "fn": ""
+   },
+   {
+    "t": "Preliminary system DFMEA issued",
+    "fn": ""
+   },
+   {
+    "t": "Cost feasibility confirmed within target band",
+    "fn": ""
+   },
+   {
+    "t": "Management Go/No-Go decision recorded",
+    "fn": ""
+   }
+  ],
+  "AB1": [
+   {
+    "t": "Project charter signed by CFT and sponsor",
+    "fn": ""
+   },
+   {
+    "t": "Final product spec issued and customer-acknowledged",
+    "fn": ""
+   },
+   {
+    "t": "PPAP level confirmed in writing with customer",
+    "fn": ""
+   },
+   {
+    "t": "DVP & PV plan baselined and issued",
+    "fn": ""
+   },
+   {
+    "t": "Compliance matrix issued",
+    "fn": ""
+   },
+   {
+    "t": "Customer-Specific Requirements (CSR) matrix issued",
+    "fn": ""
+   },
+   {
+    "t": "Reliability targets documented",
+    "fn": ""
+   },
+   {
+    "t": "Technical feasibility report issued and approved",
+    "fn": ""
+   }
+  ],
+  "AB2": [
+   {
+    "t": "All drawings released in PLM with revision control",
+    "fn": ""
+   },
+   {
+    "t": "DFMEA initial release — all High-AP (AIAG-VDA) items have actions; Medium-AP justified",
+    "fn": ""
+   },
+   {
+    "t": "CC/SC list declared and approved; flow matrix issued",
+    "fn": ""
+   },
+   {
+    "t": "Product-safety characteristics identified and approved",
+    "fn": ""
+   },
+   {
+    "t": "Manufacturing / team feasibility commitment signed by CFT",
+    "fn": ""
+   },
+   {
+    "t": "Supplier selection: 3-way sign-off (Sourcing + QA + Engineering)",
+    "fn": ""
+   },
+   {
+    "t": "Packaging standard confirmed",
+    "fn": ""
+   },
+   {
+    "t": "Capex approved by management",
+    "fn": ""
+   },
+   {
+    "t": "Line layout + ergonomics review completed",
+    "fn": ""
+   },
+   {
+    "t": "Design Review 1 completed with CFT sign-off",
+    "fn": ""
+   }
+  ],
+  "AB3": [
+   {
+    "t": "BOM frozen in PLM/SAP (date-stamped)",
+    "fn": ""
+   },
+   {
+    "t": "TDR completed with vendor — tool design approved",
+    "fn": ""
+   },
+   {
+    "t": "All POs released (tooling, BO, machines, MFTGB)",
+    "fn": ""
+   },
+   {
+    "t": "Long-lead tracker active and reviewed weekly",
+    "fn": ""
+   },
+   {
+    "t": "Supplier PPAP plan agreed for each part",
+    "fn": ""
+   },
+   {
+    "t": "Initial (pre-tooling) control plan issued",
+    "fn": ""
+   }
+  ],
+  "AB4": [
+   {
+    "t": "FPA of all T0/T1 parts completed and approved",
+    "fn": ""
+   },
+   {
+    "t": "Preliminary Gauge R&R passed on critical gauges (%GRR target stated)",
+    "fn": ""
+   },
+   {
+    "t": "Pre-launch control plan issued (elevated inspection defined)",
+    "fn": ""
+   },
+   {
+    "t": "Line commissioned and safety-cleared",
+    "fn": ""
+   },
+   {
+    "t": "Packaging trial completed — no damage",
+    "fn": ""
+   },
+   {
+    "t": "Traceability system tested and live",
+    "fn": ""
+   },
+   {
+    "t": "Operator training plan issued",
+    "fn": ""
+   }
+  ],
+  "AB5": [
+   {
+    "t": "DVP completion report issued and signed",
+    "fn": ""
+   },
+   {
+    "t": "Reliability test sign-off obtained",
+    "fn": ""
+   },
+   {
+    "t": "Customer product approval received (written)",
+    "fn": ""
+   },
+   {
+    "t": "Design Review 2 completed with CFT",
+    "fn": ""
+   },
+   {
+    "t": "All design changes via ECN — change impact assessment completed",
+    "fn": ""
+   },
+   {
+    "t": "FMEAs updated to reflect any changes",
+    "fn": ""
+   },
+   {
+    "t": "Re-test plan issued and executed for changed areas",
+    "fn": ""
+   }
+  ],
+  "AB6": [
+   {
+    "t": "Production control plan released and approved",
+    "fn": ""
+   },
+   {
+    "t": "All SOPs released and operators certified",
+    "fn": ""
+   },
+   {
+    "t": "5S audit completed — area cleared",
+    "fn": ""
+   },
+   {
+    "t": "MSA %GRR < 10% (≤30% conditional); preliminary Ppk ≥ 1.67 on CC/SC",
+    "fn": ""
+   },
+   {
+    "t": "Run-at-Rate achieved at quoted cycle time / rate",
+    "fn": ""
+   },
+   {
+    "t": "Error-proofing devices verified (challenge test passed)",
+    "fn": ""
+   },
+   {
+    "t": "RTY ≥ 95% demonstrated on ramp-up batch",
+    "fn": ""
+   },
+   {
+    "t": "Internal quality planning sign-off completed (pre customer PPAP)",
+    "fn": ""
+   },
+   {
+    "t": "Customer PPAP approval received",
+    "fn": ""
+   },
+   {
+    "t": "Safe launch plan active",
+    "fn": ""
+   }
+  ],
+  "AB7": [
+   {
+    "t": "Signed NPD-to-Production handover document",
+    "fn": ""
+   },
+   {
+    "t": "Lessons learned documented and stored in database",
+    "fn": ""
+   },
+   {
+    "t": "All open issues formally closed or deviation-approved",
+    "fn": ""
+   },
+   {
+    "t": "Warranty KPI baseline set",
+    "fn": ""
+   },
+   {
+    "t": "Ongoing Cpk ≥ 1.33 targets defined for CC/SC",
+    "fn": ""
+   },
+   {
+    "t": "Layered Process Audit (LPA) plan active",
+    "fn": ""
+   },
+   {
+    "t": "Field failure reporting process active and tested",
+    "fn": ""
+   },
+   {
+    "t": "Post-launch review dates confirmed (3M + 6M)",
+    "fn": ""
+   },
+   {
+    "t": "Production ramp plan issued",
+    "fn": ""
+   }
+  ]
+ },
+ "GATE_DELIV": {
+  "AB0": [
+   {
+    "d": "Benchmarking Report",
+    "fn": "DE / BD"
+   },
+   {
+    "d": "Preliminary Spec Document (Mech + Elec)",
+    "fn": "DE"
+   },
+   {
+    "d": "Market Potential Document",
+    "fn": "BD"
+   },
+   {
+    "d": "Preliminary Business Case",
+    "fn": "BD / Mgmt"
+   },
+   {
+    "d": "Initial Risk Register",
+    "fn": "NPD / DE"
+   },
+   {
+    "d": "TRL Assessment Sheet",
+    "fn": "DE"
+   },
+   {
+    "d": "Preliminary FTO Report",
+    "fn": "DE / Legal"
+   },
+   {
+    "d": "Proto Test Report",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Prototype Control Plan",
+    "fn": "QA / DE"
+   },
+   {
+    "d": "Customer POC Approval (written)",
+    "fn": "BD"
+   }
+  ],
+  "AB0.5": [
+   {
+    "d": "Concept Alternatives Report + Pugh Matrix",
+    "fn": "DE / CFT"
+   },
+   {
+    "d": "System Architecture Document",
+    "fn": "DE"
+   },
+   {
+    "d": "Subsystem Interface Definition",
+    "fn": "DE"
+   },
+   {
+    "d": "System-Level DFMEA (initial)",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Cost Feasibility Confirmation",
+    "fn": "BD / Sourcing"
+   },
+   {
+    "d": "Go/No-Go Decision Record",
+    "fn": "Management"
+   }
+  ],
+  "AB1": [
+   {
+    "d": "Lessons Learned Review Record",
+    "fn": "NPD / QA"
+   },
+   {
+    "d": "Compliance Matrix",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Customer-Specific Requirements (CSR) Matrix",
+    "fn": "BD / QA"
+   },
+   {
+    "d": "Project Charter",
+    "fn": "PM / Mgmt"
+   },
+   {
+    "d": "PPAP Level Agreement",
+    "fn": "BD / QA"
+   },
+   {
+    "d": "Final Product Specification",
+    "fn": "DE / BD"
+   },
+   {
+    "d": "Customer Qualification Test Plan",
+    "fn": "BD / DE"
+   },
+   {
+    "d": "DVP & PV Plan (baselined)",
+    "fn": "DE / NPD"
+   },
+   {
+    "d": "Prototype Build Plan",
+    "fn": "NPD / DE"
+   },
+   {
+    "d": "Reliability Targets Document",
+    "fn": "BD / DE"
+   },
+   {
+    "d": "Technical Feasibility Report",
+    "fn": "DE"
+   },
+   {
+    "d": "Initial PFD",
+    "fn": "PED"
+   },
+   {
+    "d": "Resource Plan",
+    "fn": "PM / Mgmt"
+   }
+  ],
+  "AB2": [
+   {
+    "d": "DFMEA (Initial Release)",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "CC/SC Declaration",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Special-Characteristics Flow Matrix",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Product-Safety Characteristics Record",
+    "fn": "QA / DE"
+   },
+   {
+    "d": "Team / Manufacturing Feasibility Commitment",
+    "fn": "CFT"
+   },
+   {
+    "d": "Tolerance Stack-Up Analysis",
+    "fn": "DE"
+   },
+   {
+    "d": "2D/3D Drawings in PLM (all parts)",
+    "fn": "DE"
+   },
+   {
+    "d": "CTQ / Q Mapping Document",
+    "fn": "QA / DE"
+   },
+   {
+    "d": "RFQ Packages (Tooling + BO)",
+    "fn": "Sourcing"
+   },
+   {
+    "d": "Supplier Matrix",
+    "fn": "Sourcing"
+   },
+   {
+    "d": "Obsolescence Risk Assessment",
+    "fn": "Sourcing / DE"
+   },
+   {
+    "d": "PFD (Process Flow Diagram)",
+    "fn": "PED"
+   },
+   {
+    "d": "PFMEA (Initial)",
+    "fn": "PED / QA"
+   },
+   {
+    "d": "Packaging Standard Confirmation",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Line Layout with Ergonomics Review",
+    "fn": "PED / Safety"
+   },
+   {
+    "d": "Capex Approval Document",
+    "fn": "Management"
+   },
+   {
+    "d": "Design Review 1 MOM",
+    "fn": "PM"
+   }
+  ],
+  "AB3": [
+   {
+    "d": "BOM Freeze Confirmation",
+    "fn": "DE / Sourcing"
+   },
+   {
+    "d": "Tooling Design Review Record",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "PO Register (Tooling + BO + Machines + MFTGB)",
+    "fn": "Sourcing"
+   },
+   {
+    "d": "Long-Lead Tracker",
+    "fn": "NPD / Sourcing"
+   },
+   {
+    "d": "Initial (Pre-Tooling) Control Plan",
+    "fn": "QA / PED"
+   },
+   {
+    "d": "MFTGB Development Plan",
+    "fn": "PED"
+   },
+   {
+    "d": "Supplier PPAP Plan Agreement",
+    "fn": "QA / Sourcing"
+   }
+  ],
+  "AB4": [
+   {
+    "d": "FPA Reports (all T0/T1 parts)",
+    "fn": "QA"
+   },
+   {
+    "d": "Gauge R&R Study (preliminary)",
+    "fn": "QA"
+   },
+   {
+    "d": "Pre-Launch Control Plan",
+    "fn": "QA / PED"
+   },
+   {
+    "d": "Line Commissioning Certificate",
+    "fn": "PED"
+   },
+   {
+    "d": "Gauge & Fixture Acceptance Records",
+    "fn": "QA / Sourcing"
+   },
+   {
+    "d": "Packaging Trial Report",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Traceability System Test Record",
+    "fn": "IT / QA"
+   },
+   {
+    "d": "Operator Training Plan",
+    "fn": "HR / PED"
+   },
+   {
+    "d": "MBOM (confirmed in SAP)",
+    "fn": "Sourcing"
+   }
+  ],
+  "AB5": [
+   {
+    "d": "DVP Completion Report",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Reliability Test Report",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Customer Approval Document",
+    "fn": "BD"
+   },
+   {
+    "d": "Design Review 2 MOM",
+    "fn": "PM"
+   },
+   {
+    "d": "Change Impact Assessment",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "ECN (if applicable)",
+    "fn": "DE"
+   },
+   {
+    "d": "Updated DFMEA / PFMEA",
+    "fn": "DE / QA"
+   },
+   {
+    "d": "Re-test Plan & Results",
+    "fn": "DE / QA"
+   }
+  ],
+  "AB6": [
+   {
+    "d": "Production Control Plan",
+    "fn": "QA / PED"
+   },
+   {
+    "d": "SOPs (all operations)",
+    "fn": "PED"
+   },
+   {
+    "d": "Operator Certification Records",
+    "fn": "HR / PED"
+   },
+   {
+    "d": "5S Audit Report",
+    "fn": "QA / PED"
+   },
+   {
+    "d": "SPC Study Report",
+    "fn": "QA"
+   },
+   {
+    "d": "MSA Study Report (Gauge R&R)",
+    "fn": "QA"
+   },
+   {
+    "d": "Process Capability Study (Ppk)",
+    "fn": "QA"
+   },
+   {
+    "d": "Run-at-Rate Report",
+    "fn": "Production / QA"
+   },
+   {
+    "d": "Error-Proofing Verification Record",
+    "fn": "QA / PED"
+   },
+   {
+    "d": "Quality Planning Sign-Off",
+    "fn": "QA / PM"
+   },
+   {
+    "d": "Ramp-Up Batch Production Report",
+    "fn": "Production"
+   },
+   {
+    "d": "Child Part PPAP Packages",
+    "fn": "QA / Sourcing"
+   },
+   {
+    "d": "Customer PPAP Approval",
+    "fn": "QA / BD"
+   },
+   {
+    "d": "Safe Launch Plan",
+    "fn": "QA"
+   },
+   {
+    "d": "Customer Witness Build Record",
+    "fn": "BD / QA"
+   },
+   {
+    "d": "Contingency / Reaction Plan",
+    "fn": "QA / PED"
+   }
+  ],
+  "AB7": [
+   {
+    "d": "NPD Handover Document",
+    "fn": "PM / Production"
+   },
+   {
+    "d": "Lessons Learned Report",
+    "fn": "PM / CFT"
+   },
+   {
+    "d": "Open Issues Log (closure record)",
+    "fn": "PM / QA"
+   },
+   {
+    "d": "Business Case Review (Actual vs. Plan)",
+    "fn": "BD / Mgmt"
+   },
+   {
+    "d": "Warranty Baseline Document",
+    "fn": "QA / BD"
+   },
+   {
+    "d": "Field Failure Reporting SOP",
+    "fn": "QA / BD"
+   },
+   {
+    "d": "Supplier Performance Baseline",
+    "fn": "Sourcing / QA"
+   },
+   {
+    "d": "Layered Process Audit (LPA) Plan",
+    "fn": "QA"
+   },
+   {
+    "d": "Production Ramp Plan",
+    "fn": "Production / BD"
+   },
+   {
+    "d": "Post-Launch Review Schedule",
+    "fn": "PM / QA"
+   }
+  ]
+ },
+ "POC_GATES": [
+  {
+   "t": [
+    [
+     "1.1",
+     "POC kick-off & scope"
+    ],
+    [
+     "1.2",
+     "Concept & spec definition"
+    ],
+    [
+     "1.3",
+     "Benchmarking & feasibility"
+    ],
+    [
+     "1.4",
+     "Preliminary BOM & make-vs-buy"
+    ],
+    [
+     "1.5",
+     "Risk assessment"
+    ]
+   ]
+  },
+  {
+   "t": [
+    [
+     "2.1",
+     "Alpha design & drawings"
+    ],
+    [
+     "2.2",
+     "Procure alpha parts"
+    ],
+    [
+     "2.3",
+     "Alpha build & assembly"
+    ],
+    [
+     "2.4",
+     "Alpha testing & DVP"
+    ],
+    [
+     "2.5",
+     "Design review (alpha)"
+    ]
+   ]
+  },
+  {
+   "t": [
+    [
+     "3.1",
+     "Beta design updates"
+    ],
+    [
+     "3.2",
+     "Procure beta parts"
+    ],
+    [
+     "3.3",
+     "Beta build"
+    ],
+    [
+     "3.4",
+     "Beta testing & reliability"
+    ],
+    [
+     "3.5",
+     "Design review (beta)"
+    ]
+   ]
+  },
+  {
+   "t": [
+    [
+     "4.1",
+     "Beta 2 refinements"
+    ],
+    [
+     "4.2",
+     "Beta 2 build"
+    ],
+    [
+     "4.3",
+     "Beta 2 validation"
+    ],
+    [
+     "4.4",
+     "Field / endurance trial"
+    ]
+   ]
+  },
+  {
+   "t": [
+    [
+     "5.1",
+     "Customer sample submission"
+    ],
+    [
+     "5.2",
+     "Customer feedback & approval"
+    ],
+    [
+     "5.3",
+     "POC closure & NPD handover"
+    ]
+   ]
+  }
+ ],
+ "GATE_APPLIC": {
+  "CAT 1": {
+   "AB0": "M",
+   "AB0.5": "M",
+   "AB1": "M",
+   "AB2": "M",
+   "AB3": "M",
+   "AB4": "M",
+   "AB5": "M",
+   "AB6": "M",
+   "AB7": "M"
+  },
+  "CAT 2": {
+   "AB0": "C",
+   "AB0.5": "M",
+   "AB1": "M",
+   "AB2": "M",
+   "AB3": "M",
+   "AB4": "M",
+   "AB5": "M",
+   "AB6": "M",
+   "AB7": "M"
+  },
+  "CAT 3": {
+   "AB0": "",
+   "AB0.5": "",
+   "AB1": "M",
+   "AB2": "M",
+   "AB3": "M",
+   "AB4": "M",
+   "AB5": "M",
+   "AB6": "M",
+   "AB7": "M"
+  },
+  "CAT 4": {
+   "AB0": "",
+   "AB0.5": "",
+   "AB1": "M",
+   "AB2": "M",
+   "AB3": "C",
+   "AB4": "C",
+   "AB5": "C",
+   "AB6": "C",
+   "AB7": "M"
+  },
+  "CAT 5": {
+   "AB0": "",
+   "AB0.5": "",
+   "AB1": "M",
+   "AB2": "",
+   "AB3": "",
+   "AB4": "",
+   "AB5": "C",
+   "AB6": "C",
+   "AB7": "M"
+  },
+  "CAT 6": {
+   "AB0": "",
+   "AB0.5": "",
+   "AB1": "C",
+   "AB2": "",
+   "AB3": "",
+   "AB4": "",
+   "AB5": "",
+   "AB6": "",
+   "AB7": "C"
+  }
+ }
+}
