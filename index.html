@@ -1154,9 +1154,13 @@ function delivBlock(kind,pid,key){const o=gateObj(kind,pid);if(!o||!GATE_DELIV[k
    +'<td><input class="gpd" value="'+esc(d.rem||'')+'" placeholder="—" onchange="setGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'rem\',this.value)"></td></tr>';}).join('');
  return '<div class="gate-sub"><div class="gate-sub-h">'+svg(I.doc)+'Deliverables <span class="gsc '+(av===list.length&&list.length?'full':(av?'part':''))+'">'+av+'/'+list.length+' ready</span></div>'
   +'<div class="tblwrap"><table class="tbl gatetbl" style="min-width:920px"><thead><tr><th style="width:58px">Avail.</th><th>Document / record</th><th style="width:150px">Owner</th><th>Attachment</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';}
-function setGE(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);o.gateExit[key][i][f]=v;saveState();render();}
+function setGE(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const e=o.gateExit[key][i];
+ if(f==='owner'&&v&&v!==e.owner)notifyAssigned(v,e.t,key+' Exit Criterion — '+o.name,o.name,'');
+ e[f]=v;saveState();render();}
 function toggleGE(kind,pid,key,i,c){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);o.gateExit[key][i].met=!!c;saveState();render();}
-function setGD(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);o.gateDeliv[key][i][f]=v;saveState();render();}
+function setGD(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const d=o.gateDeliv[key][i];
+ if(f==='owner'&&v&&v!==d.owner)notifyAssigned(v,d.d,key+' Deliverable — '+o.name,o.name,'');
+ d[f]=v;saveState();render();}
 function toggleGD(kind,pid,key,i){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const d=o.gateDeliv[key][i];d.avail=!d.avail;saveState();render();}
 function pocGatePanel(p,key,label){ensureGateLists(p,[key]);
  return '<div class="acc op"><div class="acc-h" onclick="this.parentNode.classList.toggle(\'op\')"><div class="acnt">'+geMet(p,key)+'</div><div style="flex:1"><div class="an">'+key+' · '+label+'</div><div class="as">Exit '+geMet(p,key)+'/'+geTot(key)+' · Deliverables '+gdRdy(p,key)+'/'+gdTot(key)+'</div></div></div>'
@@ -2150,7 +2154,7 @@ function gateTab(n){
  }).join('');
 }
 function setTaskField(id,nn,field,val){const p=npds.find(x=>x.id===id);if(!p)return;const t=p.tasks.find(x=>String(x.n)===String(nn));if(!t)return;
- if(field==='owner'&&val&&val!==t.owner)notifyAssigned(val,t.name,'NPD Task — '+p.name,p.name,t.planEnd);
+ if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'NPD Task — '+p.name,p.name,t.planEnd);
  if(field==='days'){t.days=Math.max(0,parseInt(val)||0);if(t.planStart)t.planEnd=addDaysIso(t.planStart,t.days);}
  else if(field==='planStart'){t.planStart=val;t.manualStart=!t.dep;if(val)t.planEnd=addDaysIso(val,t.days==null?2:t.days);}
  else if(field==='planEnd'){t.planEnd=val;if(t.planStart&&val)t.days=Math.max(0,daysBetweenIso(t.planStart,val));}
@@ -2216,7 +2220,9 @@ function timelineTab(n){
  +'</div></div>'
  +'<div class="card"><div class="card-h"><div class="ct">'+svg(I.target)+'Gate Schedule</div><span class="mut" style="font-size:11px">Editable</span></div><div class="tblwrap"><table class="tbl" style="min-width:920px"><thead><tr><th>Gate</th><th>Activity</th><th>Plan Start</th><th>Days</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>Responsibility</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
-function setGatePlan(id,gi,field,val){const n=npds.find(x=>x.id===id);if(!n||!n.gatePlan)return;const g=n.gatePlan[gi];g[field]=val;
+function setGatePlan(id,gi,field,val){const n=npds.find(x=>x.id===id);if(!n||!n.gatePlan)return;const g=n.gatePlan[gi];
+ if(field==='resp'&&val&&val!==g.resp)notifyAssigned(val,GATES[gi]?(GATES[gi].g+' · '+GATES[gi].name):'Gate '+gi,'NPD Gate — '+n.name,n.name,g.planEnd);
+ g[field]=val;
  if(field==='planStart'||field==='planEnd'){const s=g.planStart?new Date(g.planStart):null,e=g.planEnd?new Date(g.planEnd):null;if(s&&e&&e>=s)g.days=Math.round((e-s)/86400000);}
  if(field==='actualEnd'&&val){const ps=g.planEnd?new Date(g.planEnd):null,ae=new Date(val);if(ps)g.status=ae>ps?'Completed After Delay':'Completed';}
  saveState();render();}
@@ -2783,6 +2789,7 @@ function pocStageUnlocked(p,si){if(si===0)return true;for(var k=0;k<si;k++){if(p
 function isPoc(p){return p&&typeof p.id==='string'&&p.id.indexOf('POC')===0;}
 function setPocKO(id,val){const p=pocs.find(x=>x.id===id);if(!p)return;p.koDate=val;pocInit(p);recalcChain(p.tasks,p.koDate);saveState();render();}
 function setPocTask(id,idx,field,val){const p=pocs.find(x=>x.id===id);if(!p)return;const t=p.tasks[idx];if(!t)return;
+ if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'POC Task — '+p.name,p.name,t.planEnd);
  if(field==='days'){t.days=Math.max(0,parseInt(val)||0);if(t.planStart)t.planEnd=addDaysIso(t.planStart,t.days);}
  else if(field==='planStart'){t.planStart=val;t.manualStart=!t.dep;if(val)t.planEnd=addDaysIso(val,t.days);}
  else if(field==='planEnd'){t.planEnd=val;if(t.planStart&&val)t.days=Math.max(0,daysBetweenIso(t.planStart,val));}
@@ -3382,9 +3389,13 @@ function addAction(proj,reviewId){
 }
 function saveAction(proj,reviewId){const text=$('ac-text').value.trim();if(!text){toast('Action text required');return;}
  const pr=proj||($('ac-proj')&&$('ac-proj').value)||'';
- momActions.push({id:actionCtr++,proj:pr,text,owner:$('ac-owner').value.trim(),due:$('ac-due').value,status:$('ac-st').value,raisedOn:new Date().toISOString().slice(0,10),reviewId:reviewId||null});
+ const owner=$('ac-owner').value.trim();
+ momActions.push({id:actionCtr++,proj:pr,text,owner,due:$('ac-due').value,status:$('ac-st').value,raisedOn:new Date().toISOString().slice(0,10),reviewId:reviewId||null});
+ if(owner)notifyAssigned(owner,text,'Weekly Review — Action Item',pr,$('ac-due').value);
  saveState();closeModal();toast('Action added','success');render();}
-function setActionField(id,f,v){const a=momActions.find(x=>x.id===id);if(!a)return;a[f]=v;if(f==='status'&&v==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
+function setActionField(id,f,v){const a=momActions.find(x=>x.id===id);if(!a)return;
+ if(f==='owner'&&v&&v!==a.owner)notifyAssigned(v,a.text,'Weekly Review — Action Item',a.proj,a.due);
+ a[f]=v;if(f==='status'&&v==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
 function toggleAction(id){const a=momActions.find(x=>x.id===id);if(!a)return;a.status=a.status==='Done'?'Open':'Done';if(a.status==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
 function delAction(id){if(!confirm('Delete this action item?'))return;momActions=momActions.filter(x=>x.id!==id);saveState();render();}
 function printReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
@@ -4589,6 +4600,8 @@ function stdModal(i){const d=(i!=null&&stdDocs[i])?stdDocs[i]:{title:'',docNo:''
  +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveStd('+(i!=null?i:'null')+')">'+(i!=null?'Save':'Add document')+'</button></div>');}
 function saveStd(i){const t=$('sd-title').value.trim();if(!t){toast('Document title is required');return;}
  const o={title:t,docNo:$('sd-no').value.trim(),category:$('sd-cat').value,owner:$('sd-owner').value,effDate:$('sd-eff').value,remarks:$('sd-rem').value.trim()};
+ const prevOwner=(i!=null&&stdDocs[i])?stdDocs[i].owner:null;
+ if(o.owner&&o.owner!==prevOwner)notifyAssigned(o.owner,t,'Standards Library — Document Owner','',o.effDate);
  if(i!=null&&stdDocs[i]){Object.assign(stdDocs[i],o);}
  else{
   o.id=stdDocCtr++;o.files=[];o.rev=1;o.status='Active';o.pendingRev=null;
