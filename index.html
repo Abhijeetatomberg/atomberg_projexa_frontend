@@ -3335,11 +3335,18 @@ function reviewLog(){
  return '<div class="rev-list">'+(list.length?list.map(r=>{const acts=momActions.filter(a=>a.reviewId===r.id);const op=acts.filter(a=>a.status!=='Done').length;const np=Object.keys(r.notes||{}).filter(k=>r.notes[k]).length;
    return '<div class="rev-card" onclick="reviewOpenId='+r.id+';render()"><div class="rev-d"><div class="rev-dd">'+fmtNice(new Date(r.date))+'</div><div class="rev-at">'+esc(r.attendees||'—')+'</div></div>'
     +'<div class="rev-m"><span>'+np+' project note'+(np===1?'':'s')+'</span><span>'+acts.length+' action'+(acts.length===1?'':'s')+(op?' · <b style="color:#d97706">'+op+' open</b>':'')+'</span></div>'
+    +(isAdmin()?'<span style="color:var(--red);cursor:pointer;padding:4px 8px" title="Delete this review" onclick="event.stopPropagation();delReview('+r.id+')">✕</span>':'')
     +'<div class="rev-go">'+svg(I.arrow)+'</div></div>';
  }).join(''):'<div class="empty">No reviews yet. Click “New Review” to start this week’s minutes.</div>')+'</div>';
 }
 function newReview(){const iso=new Date().toISOString().slice(0,10);const last=reviews[reviews.length-1];
  reviews.push({id:reviewCtr++,date:iso,attendees:last?last.attendees:'',notes:{}});saveState();reviewOpenId=reviewCtr-1;render();}
+function delReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
+ if(!confirm('Delete the review dated '+fmtNice(new Date(r.date))+'? This removes its project notes from the MOM Matrix. Linked action items are kept (just unlinked from this review), not deleted.'))return;
+ reviews=reviews.filter(x=>x.id!==id);
+ momActions.forEach(a=>{if(a.reviewId===id)a.reviewId=null;});
+ if(reviewOpenId===id)reviewOpenId=null;
+ saveState();toast('Review deleted','success');render();}
 function reviewEditor(id){const r=reviews.find(x=>x.id===id);if(!r){reviewOpenId=null;return viewReviews();}
  const cards=reviewProjectList().map(p=>{const acts=momActions.filter(a=>a.reviewId===id&&a.proj===p.name);
    const prev=prevReviewNote(id,p.name);
@@ -3356,7 +3363,7 @@ function reviewEditor(id){const r=reviews.find(x=>x.id===id);if(!r){reviewOpenId
  }).join('');
  return ''
  +'<div class="phead"><div><h1><span class="lnk" onclick="reviewOpenId=null;render()">Weekly Review</span> › Minutes</h1><div class="sub">Project-by-project review</div></div>'
-   +'<div class="acts"><button class="btn b-gho" onclick="reviewOpenId=null;render()">← Back</button><button class="btn b-gho" onclick="printReview('+id+')">'+svg(I.export)+'Print / PDF</button><button class="btn b-gho" onclick="emailReview('+id+')">✉ Email MOM</button></div></div>'
+   +'<div class="acts"><button class="btn b-gho" onclick="reviewOpenId=null;render()">← Back</button><button class="btn b-gho" onclick="printReview('+id+')">'+svg(I.export)+'Print / PDF</button><button class="btn b-gho" onclick="emailReview('+id+')">✉ Email MOM</button>'+(isAdmin()?'<button class="btn b-gho" style="color:var(--red);border-color:var(--red)" onclick="delReview('+id+')">Delete Review</button>':'')+'</div></div>'
  +'<div class="card" style="margin-bottom:14px"><div class="card-b" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">'
    +'<div class="fl" style="margin:0"><label>Meeting date</label><input type="date" value="'+r.date+'" onchange="setReviewMeta('+id+',\'date\',this.value)"></div>'
    +'<div class="fl" style="margin:0;flex:1;min-width:240px"><label>Attendees</label><input value="'+esc(r.attendees||'')+'" placeholder="Names, comma separated" onchange="setReviewMeta('+id+',\'attendees\',this.value)"></div>'
