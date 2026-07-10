@@ -2667,13 +2667,26 @@ function newNpd(){
  +'<div class="fg2"><div class="fl"><label>Customer Name</label><input id="np-cust" placeholder="Customer / OEM"></div><div class="fl"><label>Customer Model / Application</label><input id="np-model" placeholder="e.g. Hyena 450mm NS Pedestal"></div></div>'
  +'<div class="fg2"><div class="fl"><label>Project Start Date</label><input id="np-start" type="date"></div><div class="fl"><label>SOP Date</label><input id="np-launch" type="date"></div></div>'
  +'<div class="fl"><label>Annual Volumes</label><input id="np-vol" placeholder="e.g. 23K / month (peak)"></div>'
+ +'<label style="display:flex;align-items:center;gap:8px;margin:12px 0 2px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="np-inprod" onchange="document.getElementById(\'np-prod-fields\').style.display=this.checked?\'block\':\'none\'"> Already in production <span class="mut">(bring in an existing project — skips all gates, marks them complete)</span></label>'
+ +'<div id="np-prod-fields" style="display:none;background:var(--bg2,#f8fafc);border-radius:8px;padding:10px 12px;margin-top:6px">'
+   +'<div class="fg2"><div class="fl"><label>Project Owner</label><select id="np-prod-owner">'+ownerOpts('')+'</select></div><div class="fl"><label>Actual Production Date</label><input id="np-prod-date" type="date"></div></div>'
+ +'</div>'
  +'<p style="font-size:11px;color:var(--t3);margin-top:6px">After creating, fill the <b>Charter</b> (team, scope, objectives) to unlock the KO.</p>'
  +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveNpd()">Create Project</button></div>');
 }
 function saveNpd(){const name=$('np-name').value.trim(),cust=$('np-cust').value.trim();if(!name||!cust){toast('Title and customer required');return;}
+ const inProd=$('np-inprod')&&$('np-inprod').checked;
+ const prodDateIso=inProd?$('np-prod-date').value:'';
+ if(inProd&&!prodDateIso){toast('Enter the actual production date for this existing project');return;}
  const id='NPD-2024-'+String(npdCounter++).padStart(3,'0');
- const p={id,name,cust,businessUnit:$('np-bu').value,devType:$('np-dt').value,customerModel:$('np-model').value.trim(),annualVol:$('np-vol').value.trim(),rfqNo:'',owner:'Unassigned',gate:0,koIso:'',start:isoNice($('np-start').value),launch:isoNice($('np-launch').value)||'TBD',bom:0,risk:0,category:($('np-cat')&&$('np-cat').value)||''};
- initNpd(p);npds.unshift(p);saveState();closeModal();toast('Project '+id+' created','success');openNpd(id);}
+ const p={id,name,cust,businessUnit:$('np-bu').value,devType:$('np-dt').value,customerModel:$('np-model').value.trim(),annualVol:$('np-vol').value.trim(),rfqNo:'',owner:(inProd&&$('np-prod-owner').value)||'Unassigned',gate:0,koIso:'',start:isoNice($('np-start').value),launch:isoNice($('np-launch').value)||'TBD',bom:0,risk:0,category:($('np-cat')&&$('np-cat').value)||''};
+ if(inProd){
+  p.gate=GATES.length+1;p.koDone=true;p.koIso=p.koIso||prodDateIso;p.launch=fmtNice(new Date(prodDateIso));p.bom=100;p.risk=0;
+  initNpd(p);
+  p.tasks.forEach(t=>{t.status='Completed';t.pct=100;t.actualStart=t.actualStart||prodDateIso;t.actualEnd=t.actualEnd||prodDateIso;});
+  if(Array.isArray(p.gatePlan))p.gatePlan.forEach(g=>{g.status='Completed';g.actualStart=g.actualStart||prodDateIso;g.actualEnd=g.actualEnd||prodDateIso;});
+ } else initNpd(p);
+ npds.unshift(p);saveState();closeModal();toast('Project '+id+' created'+(inProd?' — brought in as already in production':'')+'','success');openNpd(id);}
 function editNpd(id){const n=npds.find(x=>x.id===id);const koDef=n.koIso||(parseNice(n.start)?isoOf(parseNice(n.start)):'');const sopDef=parseNice(n.launch)?isoOf(parseNice(n.launch)):'';
  modal('<div class="modal-h"><div class="mt">'+svg(I.npd)+'Edit Project</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fl"><label>Project Title</label><input id="ep-name" value="'+esc(n.name)+'"></div>'
