@@ -2356,23 +2356,25 @@ function saveCharter(id,field,val){const n=npds.find(x=>x.id===id);if(!n)return;
 // ─── 4. GATE SYSTEM (per-task Plan vs Actual + doc upload) ───
 function gateTab(n){
  if(!n.koDone)return '<div class="card"><div class="card-b"><div class="empty">Gate system appears after KO.<br><span style="font-size:11px">Complete the charter and conduct the KO to generate plan dates.</span><div style="margin-top:14px"><button class="btn b-pri b-sm" onclick="gateReview(\''+n.id+'\')">'+(charterComplete(n)?'Conduct KO →':'Go to Charter →')+'</button></div></div></div></div>';
- let sr=0;const depOpts=n.tasks.map(t=>t.n);
- return GATES.map((G,gi)=>{
+ let sr=0;const depOpts=n.tasks.map(t=>t.n);const prod=npdInProduction(n);
+ const naBanner=prod?'<div class="card" style="margin-bottom:12px;background:#f0fdf4;border-color:#bbf7d0"><div class="card-b" style="display:flex;gap:24px;flex-wrap:wrap;align-items:center"><span class="badge bg-green">Production</span><span style="font-size:12px"><b>KO Date:</b> '+(n.koIso?fmtNice(new Date(n.koIso)):'—')+'</span><span style="font-size:12px"><b>SOP Date:</b> '+esc(n.launch||'—')+'</span><span class="mut" style="font-size:11px">This project is in production — individual task schedule dates are no longer tracked and show as NA below.</span></div></div>':'';
+ return naBanner+GATES.map((G,gi)=>{
    const tasks=npdGateTasks(n,gi);const done=tasks.filter(isTaskDone).length;const gp=npdGatePct(n,gi);const open=true;const gd=n.gatePlan?n.gatePlan[gi]:null;const unlocked=gateUnlocked(n,gi);
-   const rows=tasks.map(t=>{sr++;const late=t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);
+   const rows=tasks.map(t=>{sr++;const late=!prod&&t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);
      const admin=isAdmin();const canR=canEditField(t.resp,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';
-     const depSel=admin?('<select class="gpd gpdep" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'dep\',this.value)"><option value="">— none —</option>'+depOpts.filter(x=>x!==t.n).map(x=>'<option'+(t.dep===x?' selected':'')+'>'+x+'</option>').join('')+'</select>'):roc(t.dep);
+     const na='<span class="mut">NA</span>';
+     const depSel=prod?na:(admin?('<select class="gpd gpdep" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'dep\',this.value)"><option value="">— none —</option>'+depOpts.filter(x=>x!==t.n).map(x=>'<option'+(t.dep===x?' selected':'')+'>'+x+'</option>').join('')+'</select>'):roc(t.dep));
      const actLk=(canR&&unlocked)?'':' disabled'+(unlocked?'':' title="Complete the previous gate first"');
      return '<tr class="st-'+stKey(t.status,t.pct)+'">'
      +'<td class="mut">'+t.n+'</td><td class="actcell">'+esc(t.name)+'</td>'
      +'<td>'+(admin?('<select class="gpd gpr" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select>'):roc(t.resp))+'</td>'
-     +'<td>'+depSel+'</td>'
-     +'<td>'+(admin?('<input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'offset\',this.value)">'):roc(t.offset||0))+'</td>'
-     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planStart\',this.value)">'):roc(t.planStart))+'</td>'
-     +'<td>'+(admin?('<input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'days\',this.value)">'):roc(t.days==null?2:t.days))+'</td>'
-     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planEnd\',this.value)">'):roc(t.planEnd))+'</td>'
-     +'<td><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualStart\',this.value)"></td>'
-     +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualEnd\',this.value)"></td>'
+     +'<td style="text-align:center">'+depSel+'</td>'
+     +'<td style="text-align:center">'+(prod?na:(admin?('<input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'offset\',this.value)">'):roc(t.offset||0)))+'</td>'
+     +'<td style="text-align:center">'+(prod?na:(admin?('<input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planStart\',this.value)">'):roc(t.planStart)))+'</td>'
+     +'<td style="text-align:center">'+(prod?na:(admin?('<input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'days\',this.value)">'):roc(t.days==null?2:t.days)))+'</td>'
+     +'<td style="text-align:center">'+(prod?na:(admin?('<input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planEnd\',this.value)">'):roc(t.planEnd)))+'</td>'
+     +'<td style="text-align:center">'+(prod?na:('<input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualStart\',this.value)">'))+'</td>'
+     +'<td'+(late?' class="cell-late"':'')+' style="text-align:center">'+(prod?na:('<input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualEnd\',this.value)">'))+'</td>'
      +'<td>'+(admin?('<div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'):('<div class="pctcell">'+roc(t.pct||0)+'<div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'))+'</td>'
      +'<td>'+(admin?('<select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'):roc(t.status))+'</td>'
      +'<td>'+(canR?('<input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'remarks\',this.value)">'):roc(t.remarks))+'</td>'
@@ -2458,6 +2460,7 @@ function setCustomTaskField(id,gid,tn,field,val){
  if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'NPD Post-SOP Task — '+n.name,n.name,t.planEnd);
  t[field]=val;saveState();render();}
 function setTaskField(id,nn,field,val){const p=npds.find(x=>x.id===id);if(!p)return;const t=p.tasks.find(x=>String(x.n)===String(nn));if(!t)return;
+ if(npdInProduction(p)&&['dep','offset','planStart','days','planEnd','actualStart','actualEnd'].includes(field)){toast('Schedule dates are no longer tracked once a project is in production');render();return;}
  const restricted=field==='actualStart'||field==='actualEnd'||field==='remarks';
  if(!canEditField(t.resp,restricted?'restricted':'full')){toast('You can only update Actual dates and Remarks on your own tasks');render();return;}
  if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'NPD Task — '+p.name,p.name,t.planEnd);
