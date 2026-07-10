@@ -1140,31 +1140,37 @@ function geTot(key){return (GATE_EXIT[key]||[]).length;}
 function gdRdy(o,key){return o.gateDeliv&&o.gateDeliv[key]?o.gateDeliv[key].filter(x=>x.avail).length:0;}
 function gdTot(key){return (GATE_DELIV[key]||[]).length;}
 function exitBlock(kind,pid,key){const o=gateObj(kind,pid);if(!o||!GATE_EXIT[key])return '';ensureGateLists(o,[key]);const list=o.gateExit[key];const met=list.filter(x=>x.met).length;
- const rows=list.map((e,i)=>'<tr>'
-   +'<td style="text-align:center"><input type="checkbox" '+(e.met?'checked':'')+' onchange="toggleGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',this.checked)"></td>'
+ const rows=list.map((e,i)=>{const admin=isAdmin();const canR=canEditField(e.owner,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';return '<tr>'
+   +'<td style="text-align:center"><input type="checkbox" '+(canR?'':'disabled')+' '+(e.met?'checked':'')+' onchange="toggleGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',this.checked)"></td>'
    +'<td class="actcell">'+esc(e.t)+(e.fn?' <span class="mut" style="font-size:10px">['+esc(e.fn)+']</span>':'')+'</td>'
-   +'<td><select class="gpd gpr" onchange="setGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'owner\',this.value)">'+ownerOpts(e.owner)+'</select></td>'
-   +'<td><input class="gpd" value="'+esc(e.rem||'')+'" placeholder="—" onchange="setGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'rem\',this.value)"></td></tr>').join('');
+   +'<td>'+(admin?('<select class="gpd gpr" onchange="setGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'owner\',this.value)">'+ownerOpts(e.owner)+'</select>'):roc(e.owner))+'</td>'
+   +'<td>'+(canR?('<input class="gpd" value="'+esc(e.rem||'')+'" placeholder="—" onchange="setGE(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'rem\',this.value)">'):roc(e.rem))+'</td></tr>';}).join('');
  return '<div class="gate-sub"><div class="gate-sub-h">'+svg(I.check)+'Exit criteria <span class="gsc '+(met===list.length&&list.length?'full':(met?'part':''))+'">'+met+'/'+list.length+' met</span></div>'
   +'<div class="tblwrap"><table class="tbl gatetbl" style="min-width:780px"><thead><tr><th style="width:48px">Met</th><th>Exit criterion (gate-pass condition)</th><th style="width:150px">Owner</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';}
 function delivBlock(kind,pid,key){const o=gateObj(kind,pid);if(!o||!GATE_DELIV[key])return '';ensureGateLists(o,[key]);const list=o.gateDeliv[key];const av=list.filter(x=>x.avail).length;
- const rows=list.map((d,i)=>{const files=(d.files||[]).map((fl,fi)=>'<span class="chip-file">'+svg(I.doc)+'<span class="cf-open" onclick="openDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+','+fi+')">'+esc(fl.name)+'</span>'+(fl.id?'<span class="cf-tag">Uploaded</span>':(fl.link?'<span class="cf-tag" style="background:#dbeafe;color:#1e40af">link</span>':''))+'<span class="xf" onclick="delDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+','+fi+')">✕</span></span>').join('');
+ const rows=list.map((d,i)=>{const admin=isAdmin();const canR=canEditField(d.owner,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';const files=(d.files||[]).map((fl,fi)=>'<span class="chip-file">'+svg(I.doc)+'<span class="cf-open" onclick="openDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+','+fi+')">'+esc(fl.name)+'</span>'+(fl.id?'<span class="cf-tag">Uploaded</span>':(fl.link?'<span class="cf-tag" style="background:#dbeafe;color:#1e40af">link</span>':''))+'<span class="xf" onclick="delDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+','+fi+')">✕</span></span>').join('');
   return '<tr>'
-   +'<td style="text-align:center"><button class="av-toggle '+(d.avail?'yes':'')+'" onclick="toggleGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+')">'+(d.avail?'Yes':'No')+'</button></td>'
+   +'<td style="text-align:center"><button class="av-toggle '+(d.avail?'yes':'')+'" '+(canR?'':'disabled')+' onclick="toggleGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+')">'+(d.avail?'Yes':'No')+'</button></td>'
    +'<td class="actcell">'+esc(d.d)+(d.fn?' <span class="mut" style="font-size:10px">['+esc(d.fn)+']</span>':'')+'</td>'
-   +'<td><select class="gpd gpr" onchange="setGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'owner\',this.value)">'+ownerOpts(d.owner)+'</select></td>'
-   +'<td><div class="attach"><div class="attach-list">'+(files||'<span class="mut" style="font-size:11px">No file</span>')+'</div><button class="btn b-gho b-xs" onclick="addDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+')">'+svg(I.plus)+'Attach</button></div></td>'
-   +'<td><input class="gpd" value="'+esc(d.rem||'')+'" placeholder="—" onchange="setGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'rem\',this.value)"></td></tr>';}).join('');
+   +'<td>'+(admin?('<select class="gpd gpr" onchange="setGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'owner\',this.value)">'+ownerOpts(d.owner)+'</select>'):roc(d.owner))+'</td>'
+   +'<td><div class="attach"><div class="attach-list">'+(files||'<span class="mut" style="font-size:11px">No file</span>')+'</div>'+(canR?'<button class="btn b-gho b-xs" onclick="addDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+')">'+svg(I.plus)+'Attach</button>':'')+'</div></td>'
+   +'<td>'+(canR?('<input class="gpd" value="'+esc(d.rem||'')+'" placeholder="—" onchange="setGD(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+',\'rem\',this.value)">'):roc(d.rem))+'</td></tr>';}).join('');
  return '<div class="gate-sub"><div class="gate-sub-h">'+svg(I.doc)+'Deliverables <span class="gsc '+(av===list.length&&list.length?'full':(av?'part':''))+'">'+av+'/'+list.length+' ready</span></div>'
   +'<div class="tblwrap"><table class="tbl gatetbl" style="min-width:920px"><thead><tr><th style="width:58px">Avail.</th><th>Document / record</th><th style="width:150px">Owner</th><th>Attachment</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';}
 function setGE(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const e=o.gateExit[key][i];
+ if(!canEditField(e.owner,f==='rem'?'restricted':'full')){toast('Only the assigned owner can update this');render();return;}
  if(f==='owner'&&v&&v!==e.owner)notifyAssigned(v,e.t,key+' Exit Criterion — '+o.name,o.name,'');
  e[f]=v;saveState();render();}
-function toggleGE(kind,pid,key,i,c){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);o.gateExit[key][i].met=!!c;saveState();render();}
+function toggleGE(kind,pid,key,i,c){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const e=o.gateExit[key][i];
+ if(!canEditField(e.owner,'restricted')){toast('Only the assigned owner can update this');render();return;}
+ e.met=!!c;saveState();render();}
 function setGD(kind,pid,key,i,f,v){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const d=o.gateDeliv[key][i];
+ if(!canEditField(d.owner,f==='rem'?'restricted':'full')){toast('Only the assigned owner can update this');render();return;}
  if(f==='owner'&&v&&v!==d.owner)notifyAssigned(v,d.d,key+' Deliverable — '+o.name,o.name,'');
  d[f]=v;saveState();render();}
-function toggleGD(kind,pid,key,i){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const d=o.gateDeliv[key][i];d.avail=!d.avail;saveState();render();}
+function toggleGD(kind,pid,key,i){const o=gateObj(kind,pid);if(!o)return;ensureGateLists(o,[key]);const d=o.gateDeliv[key][i];
+ if(!canEditField(d.owner,'restricted')){toast('Only the assigned owner can update this');render();return;}
+ d.avail=!d.avail;saveState();render();}
 function pocGatePanel(p,key,label){ensureGateLists(p,[key]);
  return '<div class="acc op"><div class="acc-h" onclick="this.parentNode.classList.toggle(\'op\')"><div class="acnt">'+geMet(p,key)+'</div><div style="flex:1"><div class="an">'+key+' · '+label+'</div><div class="as">Exit '+geMet(p,key)+'/'+geTot(key)+' · Deliverables '+gdRdy(p,key)+'/'+gdTot(key)+'</div></div></div>'
   +'<div class="acc-b" style="display:block;padding:0">'+exitBlock('poc',p.id,key)+delivBlock('poc',p.id,key)+'</div></div>';}
@@ -1173,7 +1179,7 @@ function addDelivFile(kind,pid,key,i){
  modal('<div class="modal-h"><div class="mt">'+svg(I.doc)+'Attach deliverable</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +attachModalBody('e.g. DFMEA rev B.xlsx')
  +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveDelivFile(\''+kind+'\',\''+pid+'\',\''+key+'\','+i+')">Attach</button></div>');}
-async function saveDelivFile(kind,pid,key,i){const d=delivItem(kind,pid,key,i);if(!d)return;if(!d.files)d.files=[];
+async function saveDelivFile(kind,pid,key,i){const d=delivItem(kind,pid,key,i);if(!d)return;if(!canEditField(d.owner,'restricted')){toast('Only the assigned owner can update this');closeModal();return;}if(!d.files)d.files=[];
  let rec;try{rec=await readAttachInputsAndUpload({module:'gate-deliverable',refId:kind+':'+pid+':'+key+':'+i});}catch(e){toast(e.message||'Upload failed','error');return;}
  if(!rec){toast('Choose a file or enter a link');return;}
  d.files.push(rec);toast(rec.id?'Uploaded':'Reference saved','success');
@@ -1182,7 +1188,7 @@ function openDelivFile(kind,pid,key,i,fi){const d=delivItem(kind,pid,key,i);if(!
  if(fl.id)window.open(attachmentUrl(fl.id),'_blank');
  else if(fl.link)window.open(fl.link,'_blank');
  else toast('No file or link recorded');}
-function delDelivFile(kind,pid,key,i,fi){const d=delivItem(kind,pid,key,i);if(!d)return;const fl=d.files[fi];if(fl&&fl.id)deleteAttachmentRemote(fl.id);d.files.splice(fi,1);saveState();render();}
+function delDelivFile(kind,pid,key,i,fi){const d=delivItem(kind,pid,key,i);if(!d)return;if(!canEditField(d.owner,'restricted')){toast('Only the assigned owner can update this');return;}const fl=d.files[fi];if(fl&&fl.id)deleteAttachmentRemote(fl.id);d.files.splice(fi,1);saveState();render();}
 
 
 const RES_LOC=['AIC','Plant','Customer end'];
@@ -2340,21 +2346,23 @@ function gateTab(n){
  let sr=0;const depOpts=n.tasks.map(t=>t.n);
  return GATES.map((G,gi)=>{
    const tasks=npdGateTasks(n,gi);const done=tasks.filter(isTaskDone).length;const gp=npdGatePct(n,gi);const open=true;const gd=n.gatePlan?n.gatePlan[gi]:null;const unlocked=gateUnlocked(n,gi);
-   const rows=tasks.map(t=>{sr++;const late=t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);const lk=unlocked?'':' disabled title="Complete the previous gate first"';
-     const depSel='<select class="gpd gpdep" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'dep\',this.value)"><option value="">— none —</option>'+depOpts.filter(x=>x!==t.n).map(x=>'<option'+(t.dep===x?' selected':'')+'>'+x+'</option>').join('')+'</select>';
+   const rows=tasks.map(t=>{sr++;const late=t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);
+     const admin=isAdmin();const canR=canEditField(t.resp,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';
+     const depSel=admin?('<select class="gpd gpdep" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'dep\',this.value)"><option value="">— none —</option>'+depOpts.filter(x=>x!==t.n).map(x=>'<option'+(t.dep===x?' selected':'')+'>'+x+'</option>').join('')+'</select>'):roc(t.dep);
+     const actLk=(canR&&unlocked)?'':' disabled'+(unlocked?'':' title="Complete the previous gate first"');
      return '<tr class="st-'+stKey(t.status,t.pct)+'">'
      +'<td class="mut">'+t.n+'</td><td class="actcell">'+esc(t.name)+'</td>'
-     +'<td><select class="gpd gpr" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select></td>'
+     +'<td>'+(admin?('<select class="gpd gpr" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select>'):roc(t.resp))+'</td>'
      +'<td>'+depSel+'</td>'
-     +'<td><input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'offset\',this.value)"></td>'
-     +'<td><input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planStart\',this.value)"></td>'
-     +'<td><input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'days\',this.value)"></td>'
-     +'<td><input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planEnd\',this.value)"></td>'
-     +'<td><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualStart\',this.value)"></td>'
-     +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualEnd\',this.value)"></td>'
-     +'<td><div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div></td>'
-     +'<td><select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'
-     +'<td><input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'remarks\',this.value)"></td>'
+     +'<td>'+(admin?('<input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'offset\',this.value)">'):roc(t.offset||0))+'</td>'
+     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planStart\',this.value)">'):roc(t.planStart))+'</td>'
+     +'<td>'+(admin?('<input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'days\',this.value)">'):roc(t.days==null?2:t.days))+'</td>'
+     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'planEnd\',this.value)">'):roc(t.planEnd))+'</td>'
+     +'<td><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualStart||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualStart\',this.value)"></td>'
+     +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualEnd||'')+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'actualEnd\',this.value)"></td>'
+     +'<td>'+(admin?('<div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'):('<div class="pctcell">'+roc(t.pct||0)+'<div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'))+'</td>'
+     +'<td>'+(admin?('<select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'):roc(t.status))+'</td>'
+     +'<td>'+(canR?('<input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setTaskField(\''+n.id+'\',\''+t.n+'\',\'remarks\',this.value)">'):roc(t.remarks))+'</td>'
      +'</tr>';}).join('');
    // doc/MOM upload provision for gate closure
    const docs=n.gateDocs&&n.gateDocs[gi]?n.gateDocs[gi]:[];
@@ -2379,6 +2387,8 @@ function gateTab(n){
  }).join('');
 }
 function setTaskField(id,nn,field,val){const p=npds.find(x=>x.id===id);if(!p)return;const t=p.tasks.find(x=>String(x.n)===String(nn));if(!t)return;
+ const restricted=field==='actualStart'||field==='actualEnd'||field==='remarks';
+ if(!canEditField(t.resp,restricted?'restricted':'full')){toast('You can only update Actual dates and Remarks on your own tasks');render();return;}
  if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'NPD Task — '+p.name,p.name,t.planEnd);
  if(field==='days'){t.days=Math.max(0,parseInt(val)||0);if(t.planStart)t.planEnd=addDaysIso(t.planStart,t.days);}
  else if(field==='planStart'){t.planStart=val;t.manualStart=!t.dep;if(val)t.planEnd=addDaysIso(val,t.days==null?2:t.days);}
@@ -3020,6 +3030,8 @@ function pocStageUnlocked(p,si){if(si===0)return true;for(var k=0;k<si;k++){if(p
 function isPoc(p){return p&&typeof p.id==='string'&&p.id.indexOf('POC')===0;}
 function setPocKO(id,val){const p=pocs.find(x=>x.id===id);if(!p)return;p.koDate=val;pocInit(p);recalcChain(p.tasks,p.koDate);saveState();render();}
 function setPocTask(id,idx,field,val){const p=pocs.find(x=>x.id===id);if(!p)return;const t=p.tasks[idx];if(!t)return;
+ const restricted=field==='actualStart'||field==='actualEnd'||field==='remarks';
+ if(!canEditField(t.resp,restricted?'restricted':'full')){toast('You can only update Actual dates and Remarks on your own tasks');render();return;}
  if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'POC Task — '+p.name,p.name,t.planEnd);
  if(field==='days'){t.days=Math.max(0,parseInt(val)||0);if(t.planStart)t.planEnd=addDaysIso(t.planStart,t.days);}
  else if(field==='planStart'){t.planStart=val;t.manualStart=!t.dep;if(val)t.planEnd=addDaysIso(val,t.days);}
@@ -3317,19 +3329,21 @@ function pocGateTab(p){pocInit(p);
    const ts=p.tasks.map((t,idx)=>({t,idx})).filter(x=>x.t.stage===si);
    const pct=pocStagePct(p,si);
    const depSel=(t,idx)=>'<select class="gpd gpdep" onchange="setPocTask(\''+p.id+'\','+idx+',\'dep\',this.value)"><option value="">— none —</option>'+depOpts.filter(n=>n!==t.n).map(n=>'<option'+(t.dep===n?' selected':'')+'>'+n+'</option>').join('')+'</select>';
-   const rows=ts.map((x)=>{const t=x.t,idx=x.idx;const late=t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);const lk=unlocked?'':' disabled title="Complete the previous stage first"';
+   const rows=ts.map((x)=>{const t=x.t,idx=x.idx;const late=t.planEnd&&t.actualEnd&&new Date(t.actualEnd)>new Date(t.planEnd);
+     const admin=isAdmin();const canR=canEditField(t.resp,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';
+     const actLk=(canR&&unlocked)?'':' disabled'+(unlocked?'':' title="Complete the previous stage first"');
      return '<tr class="st-'+stKey(t.status,t.pct)+'"><td class="mut">'+t.n+'</td><td class="actcell">'+esc(t.name)+'</td>'
-      +'<td><select class="gpd gpr" onchange="setPocTask(\''+p.id+'\','+idx+',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select></td>'
-      +'<td>'+depSel(t,idx)+'</td>'
-      +'<td><input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'offset\',this.value)" title="Lead/lag days vs predecessor"></td>'
-      +'<td><input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'planStart\',this.value)"></td>'
-      +'<td><input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'days\',this.value)"></td>'
-      +'<td><input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'planEnd\',this.value)"></td>'
-      +'<td><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualStart||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualStart\',this.value)"></td>'
-      +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+lk+' value="'+(t.actualEnd||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualEnd\',this.value)"></td>'
-      +'<td><div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div></td>'
-      +'<td><select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'
-      +'<td><input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setPocTask(\''+p.id+'\','+idx+',\'remarks\',this.value)"></td></tr>';
+      +'<td>'+(admin?('<select class="gpd gpr" onchange="setPocTask(\''+p.id+'\','+idx+',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select>'):roc(t.resp))+'</td>'
+      +'<td>'+(admin?depSel(t,idx):roc(t.dep))+'</td>'
+      +'<td>'+(admin?('<input type="number" class="gpd gpnum" value="'+(t.offset||0)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'offset\',this.value)" title="Lead/lag days vs predecessor">'):roc(t.offset||0))+'</td>'
+      +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'planStart\',this.value)">'):roc(t.planStart))+'</td>'
+      +'<td>'+(admin?('<input type="number" class="gpd gpnum" min="0" value="'+(t.days==null?2:t.days)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'days\',this.value)">'):roc(t.days==null?2:t.days))+'</td>'
+      +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'planEnd\',this.value)">'):roc(t.planEnd))+'</td>'
+      +'<td><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualStart||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualStart\',this.value)"></td>'
+      +'<td'+(late?' class="cell-late"':'')+'><input type="date" class="gpd gpdate"'+actLk+' value="'+(t.actualEnd||'')+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'actualEnd\',this.value)"></td>'
+      +'<td>'+(admin?('<div class="pctcell"><input type="number" class="gpd gpnum" min="0" max="100" value="'+(t.pct||0)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'pct\',this.value)"><div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'):('<div class="pctcell">'+roc(t.pct||0)+'<div class="pctbar"><i style="width:'+(t.pct||0)+'%"></i></div></div>'))+'</td>'
+      +'<td>'+(admin?('<select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setPocTask(\''+p.id+'\','+idx+',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'):roc(t.status))+'</td>'
+      +'<td>'+(canR?('<input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setPocTask(\''+p.id+'\','+idx+',\'remarks\',this.value)">'):roc(t.remarks))+'</td></tr>';
    }).join('');
    const skipToggle=POC_SKIPPABLE[si]?'<label class="poc-skip" onclick="event.stopPropagation()"><input type="checkbox" '+(skip?'checked':'')+' onchange="setPocSkip(\''+p.id+'\','+si+',this.checked)"> Not required</label>':'';
    return '<div class="acc'+(open?' op':'')+'"><div class="acc-h" onclick="this.parentNode.classList.toggle(\'op\')">'
@@ -3556,14 +3570,14 @@ function actionsTable(){
  const projs=[...new Set(momActions.map(a=>a.proj).filter(Boolean))];
  let list=momActions.filter(a=>(!actFilter||a.status===actFilter)&&(!actProj||a.proj===actProj)&&(!actOwner||a.owner===actOwner));
  list=list.slice().sort(actSort?ACT_SORT_FN[actSort]:(a,b)=>(a.status==='Done')-(b.status==='Done')||((a.due||'9')<(b.due||'9')?-1:1));
- const rows=list.map(a=>'<tr'+(a.status==='Done'?' style="opacity:.6"':'')+'>'
-   +'<td><input type="checkbox" '+(a.status==='Done'?'checked':'')+' onchange="toggleAction('+a.id+')" style="width:16px;height:16px;cursor:pointer"></td>'
+ const rows=list.map(a=>{const canR=canEditField(a.owner,'restricted');return '<tr'+(a.status==='Done'?' style="opacity:.6"':'')+'>'
+   +'<td><input type="checkbox" '+(canR?'':'disabled')+' '+(a.status==='Done'?'checked':'')+' onchange="toggleAction('+a.id+')" style="width:16px;height:16px;cursor:pointer"></td>'
    +'<td style="min-width:240px;white-space:normal">'+esc(a.text)+'</td>'
    +'<td class="lnk" style="white-space:nowrap">'+esc(a.proj)+'</td>'
    +'<td>'+esc(a.owner||'—')+'</td>'
    +'<td style="white-space:nowrap'+(actOverdue(a)?';color:var(--red);font-weight:700':'')+'">'+(a.due?fmtNice(new Date(a.due)):'—')+(actOverdue(a)?' ⚠':'')+'</td>'
-   +'<td><select class="taskstatus" onchange="setActionField('+a.id+',\'status\',this.value)">'+ACTION_ST.map(o=>'<option'+(a.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select></td>'
-   +'<td><span style="color:var(--red);cursor:pointer" onclick="delAction('+a.id+')">✕</span></td></tr>').join('');
+   +'<td>'+(canR?('<select class="taskstatus" onchange="setActionField('+a.id+',\'status\',this.value)">'+ACTION_ST.map(o=>'<option'+(a.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'):('<span class="roc">'+esc(a.status)+'</span>'))+'</td>'
+   +'<td><span style="color:var(--red);cursor:pointer" onclick="delAction('+a.id+')">✕</span></td></tr>';}).join('');
  return '<div class="toolbar"><div style="flex:1"></div>'+sel2('actProj','All Projects',projs,actProj)+sel2('actFilter','All Status',ACTION_ST,actFilter)+(owners.length?sel2('actOwner','All Owners',owners,actOwner):'')+sel2('actSort','Sort: Default',ACT_SORTS,actSort)+'<button class="btn b-pri b-sm" onclick="addAction(\'\',null)">'+svg(I.plus)+'Add Action</button></div>'
   +'<div class="card"><div class="tblwrap"><table class="tbl" style="min-width:780px"><thead><tr><th>✓</th><th>Action Item</th><th>Project</th><th>Owner</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" class="empty">No action items. Add one or create a review.</td></tr>')+'</tbody></table></div></div>';
 }
@@ -3624,9 +3638,12 @@ function saveAction(proj,reviewId){const text=$('ac-text').value.trim();if(!text
  if(owner)notifyAssigned(owner,text,'Weekly Review — Action Item',pr,$('ac-due').value);
  saveState();closeModal();toast('Action added','success');render();}
 function setActionField(id,f,v){const a=momActions.find(x=>x.id===id);if(!a)return;
+ if(!canEditField(a.owner,f==='status'?'restricted':'full')){toast('Only the assigned owner can update this');render();return;}
  if(f==='owner'&&v&&v!==a.owner)notifyAssigned(v,a.text,'Weekly Review — Action Item',a.proj,a.due);
  a[f]=v;if(f==='status'&&v==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
-function toggleAction(id){const a=momActions.find(x=>x.id===id);if(!a)return;a.status=a.status==='Done'?'Open':'Done';if(a.status==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
+function toggleAction(id){const a=momActions.find(x=>x.id===id);if(!a)return;
+ if(!canEditField(a.owner,'restricted')){toast('Only the assigned owner can update this');render();return;}
+ a.status=a.status==='Done'?'Open':'Done';if(a.status==='Done')a.closedOn=new Date().toISOString().slice(0,10);saveState();render();}
 function delAction(id){if(!confirm('Delete this action item?'))return;momActions=momActions.filter(x=>x.id!==id);saveState();render();}
 function printReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
  let h='<h1>Weekly Review — '+fmtNice(new Date(r.date))+'</h1><p><b>Attendees:</b> '+esc(r.attendees||'—')+'</p>';
@@ -3740,28 +3757,41 @@ function npdPpapTab(n){
 function addPpapModal(lockProj){ppapModal(null,lockProj);}
 function editPpapModal(id){const idx=ppap.findIndex(x=>x.id===id);if(idx<0)return;ppapModal(idx);}
 function ppapModal(i,lockProj){const d=(i!=null&&ppap[i])?ppap[i]:{proj:lockProj||'',element:'',status:'Not Started',owner:'',due:'',submitted:'',approved:''};
+ const full=i==null||isAdmin(); // creating a new doc is unrestricted; editing an existing one is admin-only for these fields
+ const canR=i==null||canEditField(d.owner,'restricted'); // submitted/approved: owner or admin (or unrestricted if creating new)
  const cl=v=>esc(v||'');
  const dl=(id,arr)=>'<datalist id="'+id+'">'+arr.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>';
  const projOpts=[...new Set([...npds.map(n=>n.name),...ppap.map(p=>p.proj)])].filter(Boolean);
- const projField=lockProj?'<div class="fl"><label>Project</label><input value="'+cl(lockProj)+'" disabled></div>'
+ const projField=!full?'<div class="fl"><label>Project</label><input value="'+cl(lockProj||d.proj)+'" disabled></div>'
+   :lockProj?'<div class="fl"><label>Project</label><input value="'+cl(lockProj)+'" disabled></div>'
    :'<div class="fl"><label>Project</label><input id="pd-proj" list="pd-projs" value="'+cl(d.proj)+'" placeholder="Select or type project name">'+dl('pd-projs',projOpts)+'</div>';
  modal('<div class="modal-h"><div class="mt">'+svg(I.ppap)+(i!=null?'Edit PPAP Document':'Add PPAP Document')+'</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+ +(!full?'<div class="mut" style="font-size:11.5px;margin-bottom:10px">You can update Submitted Date and Approved Date here — everything else is set by an admin.</div>':'')
  +projField
- +'<div class="fl"><label>Document / Element</label><input id="pd-element" list="pd-elements" value="'+cl(d.element)+'" placeholder="Select a standard element or type your own">'+dl('pd-elements',PPAP_ELEMENTS)+'</div>'
- +'<div class="fg2"><div class="fl"><label>Status</label><select id="pd-status">'+PPAP_STATUS.map(s=>'<option'+(d.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select></div>'
-   +'<div class="fl"><label>Owner</label><select id="pd-owner">'+ownerOpts(d.owner||'')+'</select></div></div>'
- +'<div class="fg2"><div class="fl"><label>Due Date</label><input type="date" id="pd-due" value="'+cl(d.due)+'"></div>'
-   +'<div class="fl"><label>Submitted Date</label><input type="date" id="pd-submitted" value="'+cl(d.submitted)+'"></div></div>'
- +'<div class="fl"><label>Approved Date</label><input type="date" id="pd-approved" value="'+cl(d.approved)+'"></div>'
- +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="savePpapModal('+(i!=null?i:'null')+(lockProj?',\''+esc(lockProj).replace(/'/g,"\\'")+'\'':'')+')">'+(i!=null?'Save':'Add Document')+'</button></div>');}
+ +'<div class="fl"><label>Document / Element</label><input id="pd-element" value="'+cl(d.element)+'" placeholder="Select a standard element or type your own"'+(full?' list="pd-elements"':' disabled')+'>'+(full?dl('pd-elements',PPAP_ELEMENTS):'')+'</div>'
+ +'<div class="fg2"><div class="fl"><label>Status</label>'+(full?'<select id="pd-status">'+PPAP_STATUS.map(s=>'<option'+(d.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>':'<input value="'+cl(d.status)+'" disabled>')+'</div>'
+   +'<div class="fl"><label>Owner</label>'+(full?'<select id="pd-owner">'+ownerOpts(d.owner||'')+'</select>':'<input value="'+cl(d.owner)+'" disabled>')+'</div></div>'
+ +'<div class="fg2"><div class="fl"><label>Due Date</label><input type="date" id="pd-due" value="'+cl(d.due)+'"'+(full?'':' disabled')+'></div>'
+   +'<div class="fl"><label>Submitted Date</label><input type="date" id="pd-submitted" value="'+cl(d.submitted)+'"'+(canR?'':' disabled')+'></div></div>'
+ +'<div class="fl"><label>Approved Date</label><input type="date" id="pd-approved" value="'+cl(d.approved)+'"'+(canR?'':' disabled')+'></div>'
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button>'+(full||canR?'<button class="btn b-pri" onclick="savePpapModal('+(i!=null?i:'null')+(lockProj?',\''+esc(lockProj).replace(/'/g,"\\'")+'\'':'')+')">'+(i!=null?'Save':'Add Document')+'</button>':'')+'</div>');}
 function savePpapModal(i,lockProj){const v=id=>{const el=$(id);return el?el.value.trim():'';};
- const proj=lockProj||v('pd-proj'),element=v('pd-element');
- if(!proj||!element){toast('Project and Document / Element are required');return;}
- const obj={proj,element,status:v('pd-status'),owner:v('pd-owner'),due:v('pd-due'),submitted:v('pd-submitted'),approved:v('pd-approved')};
- const prevOwner=(i!=null&&ppap[i])?ppap[i].owner:null;
- if(i!=null&&ppap[i]){Object.assign(ppap[i],obj);toast('Document updated','success');}
+ const full=i==null||isAdmin();
+ const existing=(i!=null&&ppap[i])?ppap[i]:null;
+ const canR=i==null||canEditField(existing&&existing.owner,'restricted');
+ if(!full&&!canR){toast('Only the assigned owner or an admin can update this');closeModal();return;}
+ let obj;
+ if(full){
+  const proj=lockProj||v('pd-proj'),element=v('pd-element');
+  if(!proj||!element){toast('Project and Document / Element are required');return;}
+  obj={proj,element,status:v('pd-status'),owner:v('pd-owner'),due:v('pd-due'),submitted:v('pd-submitted'),approved:v('pd-approved')};
+ } else {
+  obj=Object.assign({},existing,{submitted:v('pd-submitted'),approved:v('pd-approved')});
+ }
+ const prevOwner=existing?existing.owner:null;
+ if(existing){Object.assign(existing,obj);toast('Document updated','success');}
  else{obj.id=ppapCtr++;obj.files=[];ppap.push(obj);toast('Document added','success');}
- if(obj.owner&&obj.owner!==prevOwner)notifyAssigned(obj.owner,element,'PPAP Docs',proj,obj.due);
+ if(obj.owner&&obj.owner!==prevOwner)notifyAssigned(obj.owner,obj.element,'PPAP Docs',obj.proj,obj.due);
  saveState();closeModal();render();}
 function delPpap(id){const i=ppap.findIndex(x=>x.id===id);if(i<0)return;if(!confirm('Remove "'+ppap[i].element+'"?'))return;ppap.splice(i,1);saveState();render();}
 
@@ -4420,6 +4450,11 @@ function loadUsers(){
 function saveUsers(){try{localStorage.setItem(U_KEY,JSON.stringify(users));localStorage.setItem(U_VER,SEED_VERSION);}catch(e){}saveState();}
 function findUser(u){u=(u||'').trim().toLowerCase();return users.find(x=>x.user.toLowerCase()===u||(x.email||'').toLowerCase()===u);}
 function isAdmin(){return CURRENT_USER&&CURRENT_USER.role==='admin';}
+// Field-level permission on top of module access: an assigned task/record's owner can edit only
+// a small "restricted" set of fields (actual date, remarks, ...) — everything else is admin-only,
+// and anyone who is neither the owner nor an admin gets a fully read-only record.
+function isOwnerOf(v){return !!(CURRENT_USER&&v&&(CURRENT_USER.name===v||CURRENT_USER.user===v));}
+function canEditField(ownerVal,kind){if(isAdmin())return true;if(kind==='restricted')return isOwnerOf(ownerVal);return false;}
 const MODULE_NAV=NAV.filter(n=>n.k!=='home'&&n.k!=='users');
 function hasModuleAccess(key){
  if(!CURRENT_USER)return false;
@@ -5196,12 +5231,11 @@ function viewEcn(){const admin=isAdmin();
  const cats=[...new Set(ecns.map(e=>e.projCat).filter(Boolean))];
  const chips='<select class="fsel" onchange="ecnFilter=this.value;render()"><option value=""'+(ecnFilter===''?' selected':'')+'>All Categories ('+ecns.length+')</option>'+cats.map(c=>'<option value="'+esc(c)+'"'+(ecnFilter===c?' selected':'')+'>'+esc(c)+' ('+ecns.filter(e=>e.projCat===c).length+')</option>').join('')+'</select>';
  const rows=list.map(e=>{
-   const locked=(e.status==='Implemented')&&!admin;
-   const ed=!locked;
+   const canR=canEditField(e.creator,'restricted'); // approvedDate/implDate — the ECN's "actual progress" dates
    const sc=ecnStatusClass(e.status);
-   const tx=(f)=>ed?'<textarea class="ecx" onchange="setEcn('+e.id+',\''+f+'\',this.value)">'+esc(e[f]||'')+'</textarea>':'<span class="roc">'+esc(e[f]||'—')+'</span>';
-   const dt=(f)=>ed?'<input type="date" class="gx dt" value="'+esc(ecnDateNorm(e[f])||'')+'" onchange="setEcn('+e.id+',\''+f+'\',this.value)">':'<span class="roc">'+esc(ecnD(e[f]))+'</span>';
-   const st=(admin||e.status!=='Implemented')?'<select class="gx gxs" onchange="setEcn('+e.id+',\'status\',this.value)">'+ECN_STATUS.map(s=>'<option'+(e.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>':ecnStBadge(e.status);
+   const tx=(f)=>admin?'<textarea class="ecx" onchange="setEcn('+e.id+',\''+f+'\',this.value)">'+esc(e[f]||'')+'</textarea>':'<span class="roc">'+esc(e[f]||'—')+'</span>';
+   const dt=(f)=>{const canEdit=(f==='approvedDate'||f==='implDate')?canR:admin;return canEdit?'<input type="date" class="gx dt" value="'+esc(ecnDateNorm(e[f])||'')+'" onchange="setEcn('+e.id+',\''+f+'\',this.value)">':'<span class="roc">'+esc(ecnD(e[f]))+'</span>';};
+   const st=admin?'<select class="gx gxs" onchange="setEcn('+e.id+',\'status\',this.value)">'+ECN_STATUS.map(s=>'<option'+(e.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>':ecnStBadge(e.status);
    return '<tr class="'+sc+'">'
     +'<td style="white-space:nowrap;min-width:96px">'+tx('ecnNo')+'</td>'
     +'<td style="min-width:90px">'+tx('projCat')+'</td>'
@@ -5234,7 +5268,10 @@ function viewEcn(){const admin=isAdmin();
  +'</div>'
  +'<div class="card" style="margin-bottom:12px"><div class="card-b" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+chips+sel2('ecnStatFilter','All Status',ECN_STATUS,ecnStatFilter)+sel2('ecnSort','Sort: Newest First',ECN_SORTS,ecnSort)+'<div class="search" style="min-width:220px;margin-left:auto">'+svg(I.search)+'<input placeholder="Search ECN no, project, description…" value="'+esc(ecnSearch)+'" id="gsearch" oninput="ecnSearch=this.value;render()"></div></div></div>'
  +table;}
-function setEcn(id,f,v){const e=ecns.find(x=>x.id===id);if(!e)return;e[f]=v;saveSoon();if(f==='status')render();}
+function setEcn(id,f,v){const e=ecns.find(x=>x.id===id);if(!e)return;
+ const restricted=f==='approvedDate'||f==='implDate';
+ if(!canEditField(e.creator,restricted?'restricted':'full')){toast('Only the ECN creator or an admin can update this');render();return;}
+ e[f]=v;saveSoon();if(f==='status')render();}
 function ecnStatusClass(s){s=(s||'').toLowerCase();if(s==='implemented')return 'ecn-done';if(s==='approved')return 'ecn-appr';if(s==='under approval')return 'ecn-pend';if(s==='rejected')return 'ecn-rej';return '';}
 function delEcnId(id){const i=ecns.findIndex(x=>x.id===id);if(i<0)return;if(!confirm('Remove ECN '+(ecns[i].ecnNo||'')+'?'))return;ecns.splice(i,1);saveState();render();}
 function addEcnRow(){ecns.unshift({id:ecnCtr++,ecnNo:'',projCat:'',proj:'',status:'Under Approval',desc:'',ecrAvail:'',creator:'',ecnDate:'',approvedDate:'',plannedDate:'',implDate:'',bomPart:'',stockLine:'',stockStore:'',newPartInward:'',files:[]});saveState();render();toast('New ECN row added — fill it in','success');}
