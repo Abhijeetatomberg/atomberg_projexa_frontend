@@ -3877,8 +3877,9 @@ function ppapModal(i,lockProj){const d=(i!=null&&ppap[i])?ppap[i]:{proj:lockProj
  +'<div class="fg2"><div class="fl"><label>Due Date</label><input type="date" id="pd-due" value="'+cl(d.due)+'"'+(full?'':' disabled')+'></div>'
    +'<div class="fl"><label>Submitted Date</label><input type="date" id="pd-submitted" value="'+cl(d.submitted)+'"'+(canR?'':' disabled')+'></div></div>'
  +'<div class="fl"><label>Approved Date</label><input type="date" id="pd-approved" value="'+cl(d.approved)+'"'+(canR?'':' disabled')+'></div>'
+ +(i==null?('<div class="bom-sec">Attachment</div>'+attachModalBody('e.g. PSW.pdf')):'')
  +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button>'+(full||canR?'<button class="btn b-pri" onclick="savePpapModal('+(i!=null?i:'null')+(lockProj?',\''+esc(lockProj).replace(/'/g,"\\'")+'\'':'')+')">'+(i!=null?'Save':'Add Document')+'</button>':'')+'</div>');}
-function savePpapModal(i,lockProj){const v=id=>{const el=$(id);return el?el.value.trim():'';};
+async function savePpapModal(i,lockProj){const v=id=>{const el=$(id);return el?el.value.trim():'';};
  const full=i==null||isAdmin();
  const existing=(i!=null&&ppap[i])?ppap[i]:null;
  const canR=i==null||canEditField(existing&&existing.owner,'restricted');
@@ -3893,7 +3894,12 @@ function savePpapModal(i,lockProj){const v=id=>{const el=$(id);return el?el.valu
  }
  const prevOwner=existing?existing.owner:null;
  if(existing){Object.assign(existing,obj);toast('Document updated','success');}
- else{obj.id=ppapCtr++;obj.files=[];ppap.push(obj);toast('Document added','success');}
+ else{
+  obj.id=ppapCtr++;obj.files=[];
+  let rec=null;try{rec=await readAttachInputsAndUpload({module:'ppap',refId:String(obj.id)});}catch(e){toast(e.message||'Attachment upload failed — document saved without it','error');}
+  if(rec)obj.files.push(rec);
+  ppap.push(obj);toast('Document added'+(rec?' with attachment':''),'success');
+ }
  if(obj.owner&&obj.owner!==prevOwner)notifyAssigned(obj.owner,obj.element,'PPAP Docs',obj.proj,obj.due);
  saveState();closeModal();render();}
 function delPpap(id){const i=ppap.findIndex(x=>x.id===id);if(i<0)return;if(!confirm('Remove "'+ppap[i].element+'"?'))return;ppap.splice(i,1);saveState();render();}
@@ -4969,16 +4975,18 @@ function stdModal(i){const d=(i!=null&&stdDocs[i])?stdDocs[i]:{title:'',docNo:''
  +'<div class="fg2" style="margin-top:10px"><div class="fl"><label>Document No.</label><input id="sd-no" value="'+esc(d.docNo)+'" placeholder="e.g. AIPL/PM/PR/01"></div><div class="fl"><label>Category</label><select id="sd-cat">'+STD_CAT.map(c=>'<option'+(d.category===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div></div>'
  +'<div class="fg2" style="margin-top:10px"><div class="fl"><label>Owner</label><select id="sd-owner">'+ownerOpts(d.owner)+'</select></div><div class="fl"><label>Effective Date</label><input type="date" id="sd-eff" value="'+esc(d.effDate)+'"></div></div>'
  +'<div class="fl" style="margin-top:10px"><label>Remarks</label><input id="sd-rem" value="'+esc(d.remarks||'')+'" placeholder="Optional note"></div>'
- +(i!=null?'<p style="font-size:11px;color:var(--t3);margin-top:10px">Revision number, status, and the file itself are controlled through <b>Revise / Upgrade</b> and <b>Attach</b> on the row — not edited here.</p>'
-   :'<p style="font-size:11px;color:var(--t3);margin-top:10px">This creates Rev 1. After saving, use <b>Attach</b> on the row to add the file (OneDrive/SharePoint) or a link. Future changes go through <b>Revise / Upgrade</b>, with approval sign-off.</p>')
+ +(i!=null?'<p style="font-size:11px;color:var(--t3);margin-top:10px">Revision number and status are controlled through <b>Revise / Upgrade</b> on the row — not edited here. Use <b>Attach</b> on the row to add or change the file.</p>'
+   :('<div class="bom-sec">Attachment</div>'+attachModalBody('e.g. AIPL-PM-PR-01.pdf')+'<p style="font-size:11px;color:var(--t3);margin-top:10px">This creates Rev 1. Future changes go through <b>Revise / Upgrade</b>, with approval sign-off.</p>'))
  +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveStd('+(i!=null?i:'null')+')">'+(i!=null?'Save':'Add document')+'</button></div>');}
-function saveStd(i){const t=$('sd-title').value.trim();if(!t){toast('Document title is required');return;}
+async function saveStd(i){const t=$('sd-title').value.trim();if(!t){toast('Document title is required');return;}
  const o={title:t,docNo:$('sd-no').value.trim(),category:$('sd-cat').value,owner:$('sd-owner').value,effDate:$('sd-eff').value,remarks:$('sd-rem').value.trim()};
  const prevOwner=(i!=null&&stdDocs[i])?stdDocs[i].owner:null;
  if(o.owner&&o.owner!==prevOwner)notifyAssigned(o.owner,t,'Standards Library — Document Owner','',o.effDate);
  if(i!=null&&stdDocs[i]){Object.assign(stdDocs[i],o);}
  else{
   o.id=stdDocCtr++;o.files=[];o.rev=1;o.status='Active';o.pendingRev=null;
+  let rec=null;try{rec=await readAttachInputsAndUpload({module:'standards',refId:String(o.id)});}catch(e){toast(e.message||'Attachment upload failed — document saved without it','error');}
+  if(rec)o.files.push(rec);
   const who=(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'';
   o.history=[{rev:1,date:isoOf(new Date()),reason:'Initial release',changedBy:who,status:'Live',approvals:[]}];
   stdDocs.push(o);
