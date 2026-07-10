@@ -1323,6 +1323,12 @@ function notifyAssigned(ownerName,itemTitle,moduleLabel,project,dueDate){
  })}).catch(()=>{});
 }
 
+// True while the user is actively in a text field — used to avoid ever pulling in a
+// remote refresh (or re-rendering) mid-keystroke, which is what was cutting off typing.
+function isTypingNow(){
+ const el=document.activeElement;
+ return !!(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.isContentEditable));
+}
 async function loadFromDb(silent){
  dbConnState='checking';
  try{
@@ -1330,6 +1336,7 @@ async function loadFromDb(silent){
   if(res.status===404){dbConnState='connected';dbLastSavedAt=null;return false;} // DB reachable, nothing saved yet
   if(!res.ok)throw new Error('http '+res.status);
   const row=await res.json();
+  if(row.updatedAt===dbLastSavedAt){dbConnState='connected';return false;} // nothing new — no-op, don't touch the DOM
   applyState(row.data);
   try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){}
   dbLastSavedAt=row.updatedAt;dbConnState='connected';
@@ -1341,10 +1348,11 @@ async function saveToDb(force){
  try{
   const res=await dbFetch('/app-state/'+DB_STATE_KEY,{method:'PUT',body:JSON.stringify({data:collectState(),updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'',expectedUpdatedAt:force?null:dbLastSavedAt})});
   if(res.status===409){
-   // Someone else saved first — silently pull their latest so the next autosave succeeds,
-   // instead of getting permanently stuck (there's no manual "resolve" button anymore).
-   await loadFromDb(true);render();
-   toast('This data was updated elsewhere — refreshed with the latest version','info');
+   // Someone else saved first. Never yank the DOM while a field is focused — that's what was
+   // cutting off mid-keystroke typing. Just push our copy through as the new latest instead;
+   // the periodic background poll (below) is what keeps everyone's screens converging.
+   const res2=await dbFetch('/app-state/'+DB_STATE_KEY,{method:'PUT',body:JSON.stringify({data:collectState(),updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'',expectedUpdatedAt:null})});
+   if(res2.ok){const row=await res2.json();dbLastSavedAt=row.updatedAt;dbConnState='connected';}
    return;
   }
   if(!res.ok)throw new Error('http '+res.status);
@@ -1352,6 +1360,13 @@ async function saveToDb(force){
  }catch(e){dbConnState='offline';}
 }
 function scheduleDbSync(){clearTimeout(_dbSyncTimer);dbConnState='saving';_dbSyncTimer=setTimeout(()=>saveToDb(false),1200);}
+// Keeps everyone's screen live without anyone having to refresh: polls for teammates' changes
+// every few seconds, but only applies/re-renders them when the user isn't mid-typing, so it
+// can never interrupt an in-progress edit. If typing, it just tries again on the next tick.
+setInterval(()=>{
+ if(isTypingNow())return;
+ loadFromDb(true).then(changed=>{if(changed){render();toast('Updated with the latest changes from your team','info');}});
+},4000);
 
 // ════════════════════════════ HELPERS ════════════════════════════
 const $=id=>document.getElementById(id);
@@ -3328,7 +3343,12 @@ function reviewMomImportRows(rows,year){
  const fixedIdx=new Set([cType,cName,cCust,find(['electrical']),find(['mechanical']),find(['ped'])].filter(i=>i>=0));
  const dateCols=[];hdr.forEach((h,i)=>{if(fixedIdx.has(i))return;const iso=parseMomHeaderDate(h,year);if(iso)dateCols.push({i,iso});});
  if(!dateCols.length){toast('No weekly MOM date columns recognized (expected headers like "Weekly MOM- 03 July")');return;}
- const seenNew=new Set();let notesAdded=0,newProj=0,reviewsTouched=0;
+ // NOTE: Weekly Review's project list always comes from the current, active NPD/POC set —
+ // never from imported history. A name in old MOM data that isn't an active project today
+ // (closed/historical) is skipped here on purpose; we import its notes nowhere, since there's
+ // no active project row for them to attach to. This holds for this one-time import and for
+ // every future import, so the MOM Matrix never grows phantom "projects" from old paperwork.
+ let notesAdded=0,skippedHistoric=0,reviewsTouched=0;const skippedNames=new Set();
  dateCols.forEach(dc=>{
   let rv=reviews.find(r=>r.date===dc.iso);
   if(!rv){rv={id:reviewCtr++,date:dc.iso,attendees:'',notes:{}};reviews.push(rv);}
@@ -3337,21 +3357,14 @@ function reviewMomImportRows(rows,year){
    const row=rows[r];if(!row)continue;
    const name=String(row[cName]||'').trim();if(!name)continue;
    const note=String(row[dc.i]||'').trim();if(!note)continue;
-   rv.notes[name]=note;notesAdded++;
    const key=name.toLowerCase();
    const exists=npds.some(n=>n.name.toLowerCase()===key)||pocs.some(p=>p.name.toLowerCase()===key);
-   if(!exists&&!seenNew.has(key)){
-    seenNew.add(key);
-    const type=cType>=0?String(row[cType]||'').trim():'';
-    const cust=cCust>=0?String(row[cCust]||'').trim():'';
-    if(/poc/i.test(type)){const id='POC-'+new Date().getFullYear()+'-'+String(pocCounter++).padStart(3,'0');const p={id,name,cust,app:'',owner:'—',reqDate:'',sampleBy:'',sampleQty:'',stage:0,koDone:false,koDate:'',created:fmtNice(new Date()),skip:{},promotedTo:null,charter:{},parts:[]};pocInit(p);pocs.push(p);}
-    else{const id='NPD-'+new Date().getFullYear()+'-'+String(npdCounter++).padStart(3,'0');const p={id,name,cust,businessUnit:'',devType:'NPD',customerModel:'',annualVol:'',rfqNo:'',owner:'Unassigned',gate:0,koIso:'',start:'',launch:'TBD',bom:0,risk:0,category:''};initNpd(p);npds.push(p);}
-    newProj++;
-   }
+   if(!exists){skippedHistoric++;skippedNames.add(name);continue;}
+   rv.notes[name]=note;notesAdded++;
   }
  });
  saveState();render();
- toast(reviewsTouched+' review date(s), '+notesAdded+' notes imported'+(newProj?', '+newProj+' placeholder project(s) created':''),'success');}
+ toast(reviewsTouched+' review date(s), '+notesAdded+' notes imported'+(skippedHistoric?', '+skippedNames.size+' historical project name(s) skipped (not in current NPD/POC list)':''),'success');}
 function prevReviewNote(curId,proj){const cur=reviews.find(r=>r.id===curId);if(!cur)return null;
  const cand=reviews.filter(r=>(r.notes&&r.notes[proj])&&(r.date<cur.date||(r.date===cur.date&&r.id<curId)));
  cand.sort((a,b)=>a.date<b.date?1:(a.date>b.date?-1:b.id-a.id));return cand[0]||null;}
