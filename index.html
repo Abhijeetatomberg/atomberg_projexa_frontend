@@ -2046,6 +2046,7 @@ function rfqTable(){
 }
 function refreshRfqTable(){const e=$('rfq-table');if(e)e.innerHTML=rfqTable();autosave();}
 function newRfq(){
+ if(!isPM()){toast('Only Project Management can create new RFQs');return;}
  modal('<div class="modal-h"><div class="mt">'+svg(I.sparkle)+'Create New RFQ</div><div class="mx" onclick="closeModal()">×</div></div>'
  +'<div class="modal-b">'
   +'<div class="fl"><label>Project Title</label><input id="nr-name" placeholder="Enter project title"></div>'
@@ -2572,6 +2573,7 @@ function bomDetail(id){const b=bomParts.find(x=>x.id===id);if(!b)return;ensureBo
  +'</div><div class="modal-f">'+(isAdmin()?'<button class="btn b-gho" style="color:var(--red)" onclick="delBomPart('+id+')">Delete part</button>':'')+'<div style="flex:1"></div><button class="btn b-pri" onclick="closeModal()">Done</button></div>');
 }
 function addBomPart(proj){
+ if(!isPM()){toast('Only Project Management can add a new BOM part');return;}
  modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Add BOM Part</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +(proj?'':'<div class="fl"><label>Project</label><select id="bp-proj">'+npds.map(n=>'<option>'+esc(n.name)+'</option>').join('')+'</select></div>')
  +'<div class="fg2"><div class="fl"><label>Part No</label><input id="bp-pno" placeholder="e.g. A290501"></div><div class="fl"><label>Part Description</label><input id="bp-desc" placeholder="e.g. HYENA FRONT COVER MACHINED"></div></div>'
@@ -2590,7 +2592,7 @@ function bomTemplate(){const h=['Part No','Part description','Overall Part statu
  const ex=['A290501','Motor Assembly','On track','1 Nos','New','Dev','Avadhut','Anil','Sourabh','Casting','Machining','23K','Syentics','Silicon','FPA pending'];
  const csv=h.join(',')+'\n'+ex.map(x=>'"'+x+'"').join(',');
  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='BOM_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
-function uploadBom(proj){const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+function uploadBom(proj){if(!isPM()){toast('Only Project Management can import BOM parts');return;}const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
  inp.onchange=function(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();
    rd.onload=function(ev){try{
      let rows;
@@ -2643,7 +2645,8 @@ function setNpdRes(id,idx,field,val){const n=npds.find(x=>x.id===id);if(!n)retur
  const all=[...teamNames.map(name=>{const exist=n.npdRes.find(r=>r.name===name);const r=resources.find(x=>x.name===name)||{};return exist||{name,location:'AIC',process:'',role:r.role||'',startDate:'',endDate:'',efforts:'',remarks:''};}),...extraRes];
  if(all[idx])all[idx][field]=val;
  n.npdRes=all;saveState();render();}
-function addNpdRes(id){const n=npds.find(x=>x.id===id);
+function addNpdRes(id){if(!isPM()){toast('Only Project Management can add project resources');return;}
+ const n=npds.find(x=>x.id===id);
  const avail=resources.filter(r=>!(n.team||[]).includes(r.name)&&!(n.npdRes||[]).find(x=>x.name===r.name));
  modal('<div class="modal-h"><div class="mt">'+svg(I.res)+'Add Resource</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fl"><label>Select Person</label><select id="ar-name"><option value="">Select…</option>'+avail.map(r=>'<option>'+esc(r.name)+'</option>').join('')+'<option value="_custom">Other (type below)</option></select></div>'
@@ -2656,6 +2659,7 @@ function saveNpdRes(id){const n=npds.find(x=>x.id===id);let name=$('ar-name').va
  npdTab='res';saveState();closeModal();toast(name+' added','success');render();}
 // ─── PROJECT CRUD ───
 function newNpd(){
+ if(!isPM()){toast('Only Project Management can create new projects');return;}
  modal('<div class="modal-h"><div class="mt">'+svg(I.npd)+'Create New Project</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fl"><label>Project Title</label><input id="np-name" placeholder="e.g. BLDC Motor 750W"></div>'
  +'<div class="fg2"><div class="fl"><label>Business Unit</label><select id="np-bu"><option value="">Select…</option>'+BU_OPTS.map(b=>'<option>'+b+'</option>').join('')+'</select></div><div class="fl"><label>Development Type</label><select id="np-dt"><option>NPD</option><option>POC</option></select></div></div>'
@@ -2745,7 +2749,8 @@ function npdBudgetTab(n){
  +'<div class="toolbar"><div style="flex:1"></div><button class="btn b-pri b-sm" onclick="addBudgetItem(\''+n.id+'\')">'+svg(I.plus)+'Add Budget Item</button></div>'
  +'<div class="card"><div class="tblwrap"><table class="tbl" style="min-width:560px"><thead><tr><th>Description</th><th>Category</th><th>Planned</th><th>Actual</th><th>Variance</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" class="empty">No budget items</td></tr>')+'</tbody></table></div></div>';
 }
-function addBudgetItem(id){const n=npds.find(x=>x.id===id);
+function addBudgetItem(id){if(!isPM()){toast('Only Project Management can add budget items');return;}
+ const n=npds.find(x=>x.id===id);
  modal('<div class="modal-h"><div class="mt">'+svg(I.budget)+'Add Budget Item</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fl"><label>Description</label><input id="bi-desc" placeholder="e.g. Tooling for housing"></div>'
  +'<div class="fl"><label>Category</label><select id="bi-cat">'+BUD_CATS.map(c=>'<option>'+c+'</option>').join('')+'</select></div>'
@@ -2973,6 +2978,7 @@ function lineKpis(list){const ready=list.filter(l=>l.readiness==='Ready'||l.read
  +'</div>';
 }
 function addLineRow(proj){
+ if(!isPM()){toast('Only Project Management can add a line process row');return;}
  modal('<div class="modal-h"><div class="mt">'+svg(I.res)+'Add Line Process</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +(proj?'':'<div class="fl"><label>Project</label><select id="lr-proj">'+npds.map(n=>'<option>'+esc(n.name)+'</option>').join('')+'</select></div>')
  +'<div class="fg2"><div class="fl"><label>Process</label><input id="lr-proc" placeholder="e.g. Stator stack insertion"></div><div class="fl"><label>BOM Part / Resp</label><input id="lr-bom" placeholder="Part / owner"></div></div>'
@@ -3441,7 +3447,8 @@ function openCharterFile(pid,bucket,i){const p=pocs.find(x=>x.id===pid);if(!p)re
  else if(fl.link)window.open(fl.link,'_blank');
  else toast('No file or link recorded');}
 function delCharterFile(pid,bucket,i){const p=pocs.find(x=>x.id===pid);if(!p)return;const fl=p.charter.files[bucket][i];if(fl&&fl.id)deleteAttachmentRemote(fl.id);p.charter.files[bucket].splice(i,1);saveState();render();}
-function newPoc(){modal('<div class="modal-h"><div class="mt">'+svg(I.rocket)+'New POC Project</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+function newPoc(){if(!isPM()){toast('Only Project Management can create new POC projects');return;}
+ modal('<div class="modal-h"><div class="mt">'+svg(I.rocket)+'New POC Project</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +'<div class="fg2"><div class="fl"><label>Project Name</label><input id="pc-name" placeholder="e.g. Compact BLDC Motor 250W"></div><div class="fl"><label>Customer</label><input id="pc-cust" placeholder="Customer or Internal"></div></div>'
  +'<div class="fg2"><div class="fl"><label>End Application</label><input id="pc-app" placeholder="e.g. Premium pedestal fan"></div><div class="fl"><label>Project Lead</label><select id="pc-owner">'+ownerOpts('')+'</select></div></div>'
  +'<div class="fg2"><div class="fl"><label>Requirement Receipt Date</label><input type="date" id="pc-reqdate"></div><div class="fl"><label>Samples Required By</label><input type="date" id="pc-sampdate"></div></div>'
@@ -3506,6 +3513,7 @@ function reviewMomTemplate(){
  const csv=h.join(',')+'\n'+ex.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',');
  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='Weekly_MOM_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
 function uploadReviewMom(){
+ if(!isPM()){toast('Only Project Management can import Weekly MOM data');return;}
  const yr=prompt('What year are these Weekly MOM columns from? (e.g. '+new Date().getFullYear()+')',String(new Date().getFullYear()));
  if(!yr)return;
  const year=parseInt(yr,10)||new Date().getFullYear();
@@ -3590,7 +3598,8 @@ function reviewLog(){
     +'<div class="rev-go">'+svg(I.arrow)+'</div></div>';
  }).join(''):'<div class="empty">No reviews yet. Click “New Review” to start this week’s minutes.</div>')+'</div>';
 }
-function newReview(){const iso=new Date().toISOString().slice(0,10);const last=reviews[reviews.length-1];
+function newReview(){if(!isPM()){toast('Only Project Management can start a new review');return;}
+ const iso=new Date().toISOString().slice(0,10);const last=reviews[reviews.length-1];
  reviews.push({id:reviewCtr++,date:iso,attendees:last?last.attendees:'',notes:{}});saveState();reviewOpenId=reviewCtr-1;render();}
 function delReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
  if(!confirm('Delete the review dated '+fmtNice(new Date(r.date))+'? This removes its project notes from the MOM Matrix. Linked action items are kept (just unlinked from this review), not deleted.'))return;
@@ -3624,6 +3633,7 @@ function reviewEditor(id){const r=reviews.find(x=>x.id===id);if(!r){reviewOpenId
 function setReviewMeta(id,f,v){const r=reviews.find(x=>x.id===id);if(r){r[f]=v;saveState();if(f==='date')render();}}
 function setReviewNote(id,v,proj){const r=reviews.find(x=>x.id===id);if(r){if(!r.notes)r.notes={};r.notes[proj]=v;saveState();}}
 function addAction(proj,reviewId){
+ if(!isPM()){toast('Only Project Management can add action items');return;}
  modal('<div class="modal-h"><div class="mt">'+svg(I.check)+'Add Action Item</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
  +(proj?'':'<div class="fl"><label>Project</label><select id="ac-proj">'+npds.map(n=>'<option>'+esc(n.name)+'</option>').join('')+'</select></div>')
  +'<div class="fl"><label>Action</label><input id="ac-text" placeholder="What needs to be done"></div>'
@@ -4227,7 +4237,7 @@ function sampleDone(s){return s.status==='Submitted'||s.status==='Delayed but Co
 function sampleLocked(s){return ['Submitted','Completed','Delayed but Completed','Dropped'].includes(s.status);}
 function sampleRowClass(s){var st=s.status;if(st==='Delayed but Completed')return 'ss-donedelay';if(st==='Submitted'||st==='Completed')return 'ss-done';if(st==='Delayed')return 'ss-delay';if(st==='On Hold')return 'ss-hold';if(st==='Dropped')return 'ss-drop';if(st==='In Progress')return 'ss-prog';return '';}
 function addSample(){samples.unshift({id:sampleCtr++,status:'New',cat:'CF',project:'',customer:'ATPL',spec:'',qty:'',reqDate:'',drawing:'',material:'',plannedSub:'',assembly:'',inspection:'',submission:'',remarks:'',planner:''});saveState();render();}
-function addSampleModal(){sampleModal(null);}
+function addSampleModal(){if(!isPM()){toast('Only Project Management can add a new sample');return;}sampleModal(null);}
 function editSampleModal(id){const idx=samples.findIndex(x=>x.id===id);if(idx<0)return;sampleModal(idx);}
 function sampleModal(i){const s=(i!=null&&samples[i])?samples[i]:{status:'New',cat:'CF',project:'',customer:'ATPL',spec:'',qty:'',reqDate:'',drawing:'',material:'',plannedSub:'',assembly:'',inspection:'',submission:'',remarks:'',planner:''};
  const cl=v=>esc(v||'');
@@ -4316,7 +4326,7 @@ function sampleTemplate(){const h=SAMPLE_IMPORT_COLS;
  const ex=['CF','Fan Motor V2','ATPL','Endurance sample','5','26-May-26','Yes','Yes','15-Jun-26','10-Jun-26','12-Jun-26','','Handled by QA','On track','In Progress'];
  const csv=h.join(',')+'\n'+ex.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',');
  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='Sample_Submission_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
-function uploadSample(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
+function uploadSample(){if(!isPM()){toast('Only Project Management can import samples');return;}const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
  inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=function(e){try{let rows;
     if(/\.csv$/i.test(f.name)){rows=bomCsvRows(e.target.result);}
@@ -4450,6 +4460,11 @@ function loadUsers(){
 function saveUsers(){try{localStorage.setItem(U_KEY,JSON.stringify(users));localStorage.setItem(U_VER,SEED_VERSION);}catch(e){}saveState();}
 function findUser(u){u=(u||'').trim().toLowerCase();return users.find(x=>x.user.toLowerCase()===u||(x.email||'').toLowerCase()===u);}
 function isAdmin(){return CURRENT_USER&&CURRENT_USER.role==='admin';}
+// "Project team" = the Project Management department, or an admin. Gates creating brand-new
+// top-level records (new project, sample, weekly review, action item, ...) across the app —
+// separate from module access (can they see it) and from owner-field edit rights (can they
+// update their own assigned task).
+function isPM(){return isAdmin()||(CURRENT_USER&&CURRENT_USER.dept==='Project Management');}
 // Field-level permission on top of module access: an assigned task/record's owner can edit only
 // a small "restricted" set of fields (actual date, remarks, ...) — everything else is admin-only,
 // and anyone who is neither the owner nor an admin gets a fully read-only record.
@@ -4655,7 +4670,8 @@ function invForm(i){return ''
  +'<div class="fg2"><div class="fl"><label>Investment (₹)</label><input id="iv-inv" type="number" value="'+(i?i.investment:'')+'"></div><div class="fl"><label>Supplier</label><input id="iv-sup" value="'+(i?esc(i.supplier):'')+'"></div></div>'
  +'<div class="fl"><label>Development Lead Time</label><input id="iv-lead" value="'+(i?esc(i.leadTime):'')+'" placeholder="e.g. 16 weeks"></div>';
 }
-function addInvest(p){modal('<div class="modal-h"><div class="mt">'+svg(I.budget)+'Add Investment</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'+invForm(p?{proj:p}:null)+'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveInvest()">Add</button></div>');}
+function addInvest(p){if(!isPM()){toast('Only Project Management can add investments');return;}
+ modal('<div class="modal-h"><div class="mt">'+svg(I.budget)+'Add Investment</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'+invForm(p?{proj:p}:null)+'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveInvest()">Add</button></div>');}
 function saveInvest(){const proj=$('iv-proj').value;investments.push({id:invCtr++,proj,process:$('iv-process').value.trim(),mftg:$('iv-mftg').value.trim(),tool:$('iv-tool').value.trim(),numbers:+$('iv-num').value||0,investment:+$('iv-inv').value||0,supplier:$('iv-sup').value.trim(),leadTime:$('iv-lead').value.trim()});saveState();closeModal();toast('Investment added','success');render();}
 function editInvest(id){const i=investments.find(x=>x.id===id);modal('<div class="modal-h"><div class="mt">'+svg(I.budget)+'Edit Investment</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'+invForm(i)+'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveInvestEdit('+id+')">Save</button></div>');}
 function saveInvestEdit(id){const i=investments.find(x=>x.id===id);i.proj=$('iv-proj').value;i.process=$('iv-process').value.trim();i.mftg=$('iv-mftg').value.trim();i.tool=$('iv-tool').value.trim();i.numbers=+$('iv-num').value||0;i.investment=+$('iv-inv').value||0;i.supplier=$('iv-sup').value.trim();i.leadTime=$('iv-lead').value.trim();saveState();closeModal();toast('Investment updated','success');render();}
@@ -5259,7 +5275,7 @@ function viewEcn(){const admin=isAdmin();
    :'<div class="card"><div class="card-b"><div class="empty" style="position:static">No ECNs yet.<br><span style="font-size:11px">'+(admin?'Click <b>Add ECN</b> to log an engineering change, or use <b>Upload</b> to import your existing ECN sheet (CSV).':'No ECNs have been logged yet.')+'</span></div></div></div>';
  return ''
  +'<div class="phead"><div><h1>ECN Tracker</h1><div class="sub">Engineering Change Notice register — status, approvals, affected BOM parts &amp; stock disposition.</div></div>'
-   +(admin?'<div class="acts"><button class="btn b-gho b-sm" onclick="ecnTemplate()">'+svg(I.export)+'Template</button><button class="btn b-gho b-sm" onclick="uploadEcn()">📤 Upload</button><button class="btn b-pri" onclick="addEcnModal()">'+svg(I.plus)+'Add ECN</button></div>':'')+'</div>'
+   +(isPM()?'<div class="acts"><button class="btn b-gho b-sm" onclick="ecnTemplate()">'+svg(I.export)+'Template</button><button class="btn b-gho b-sm" onclick="uploadEcn()">📤 Upload</button><button class="btn b-pri" onclick="addEcnModal()">'+svg(I.plus)+'Add ECN</button></div>':'')+'</div>'
  +'<div class="stats c4" style="margin-bottom:14px">'
    +tile({ico:'export',color:'#0f172a',tint:'#e2e8f0',val:ecns.length,lbl:'Total ECNs'})
    +tile({ico:'check',color:'#059669',tint:'#d1fae5',val:ecns.filter(e=>e.status==='Approved').length,lbl:'Approved'})
@@ -5275,7 +5291,7 @@ function setEcn(id,f,v){const e=ecns.find(x=>x.id===id);if(!e)return;
 function ecnStatusClass(s){s=(s||'').toLowerCase();if(s==='implemented')return 'ecn-done';if(s==='approved')return 'ecn-appr';if(s==='under approval')return 'ecn-pend';if(s==='rejected')return 'ecn-rej';return '';}
 function delEcnId(id){const i=ecns.findIndex(x=>x.id===id);if(i<0)return;if(!confirm('Remove ECN '+(ecns[i].ecnNo||'')+'?'))return;ecns.splice(i,1);saveState();render();}
 function addEcnRow(){ecns.unshift({id:ecnCtr++,ecnNo:'',projCat:'',proj:'',status:'Under Approval',desc:'',ecrAvail:'',creator:'',ecnDate:'',approvedDate:'',plannedDate:'',implDate:'',bomPart:'',stockLine:'',stockStore:'',newPartInward:'',files:[]});saveState();render();toast('New ECN row added — fill it in','success');}
-function addEcnModal(){ecnModal(null);}
+function addEcnModal(){if(!isPM()){toast('Only Project Management can add a new ECN');return;}ecnModal(null);}
 function editEcn(i){ecnModal(i);}
 function ecnModal(i){const e=(i!=null)?ecns[i]:{ecnNo:'',projCat:'',proj:'',status:'Under Approval',desc:'',ecrAvail:'',creator:'',ecnDate:'',approvedDate:'',plannedDate:'',implDate:'',bomPart:'',stockLine:'',stockStore:'',newPartInward:'',remarks:''};
  const cl=v=>esc(v||'');
@@ -5308,7 +5324,7 @@ function ecnTemplate(){const h=['Project Category','Project Name','ECN Number','
  const ex=['FAN','Motor Assembly Razon','ECN-1318','Approved','(MOTOR ASSY- RAZON) Drawing realization','Yes (ECR-0644)','Swapnesh Ghadge','26-May-26','23-Jun-26','','','A290501','120','340','15-Jul-26'];
  const csv=h.join(',')+'\n'+ex.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',');
  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='ECN_Template.csv';document.body.appendChild(a);a.click();a.remove();toast('Template downloaded','success');}
-function uploadEcn(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
+function uploadEcn(){if(!isPM()){toast('Only Project Management can import ECNs');return;}const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.xlsx,.xls';
  inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=function(e){try{let rows;
     if(/\.csv$/i.test(f.name)){rows=bomCsvRows(e.target.result);}
