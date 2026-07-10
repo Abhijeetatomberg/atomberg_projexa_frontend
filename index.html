@@ -1422,7 +1422,12 @@ async function loadModule(cfg,merge){
   seenIds.add(r.id);
   const wireStr=JSON.stringify(syncCols(cfg,r,'toWire'));
   const local=byDbId.get(r.id);
-  if(!local){arr.push(fromServerRow(cfg,r));snap.set(r.id,wireStr);changed=true;return;}
+  if(!local){
+   // Not in the local array — but if it's in our own snapshot, WE deleted it locally and its
+   // DELETE call just hasn't gone out yet (debounced ~1.2s behind this poll). Don't resurrect it.
+   if(snap.has(r.id))return;
+   arr.push(fromServerRow(cfg,r));snap.set(r.id,wireStr);changed=true;return;
+  }
   const localWireStr=JSON.stringify(syncCols(cfg,local,'toWire'));
   if(localWireStr===snap.get(r.id)&&localWireStr!==wireStr){
    Object.assign(local,syncCols(cfg,r,'fromWire'));snap.set(r.id,wireStr);changed=true;
