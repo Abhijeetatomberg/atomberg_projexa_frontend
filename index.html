@@ -238,8 +238,12 @@ select.fsel:focus{outline:none;border-color:var(--acc)}
 
 /* ───── NPD CARDS ───── */
 .pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
-.pcard{background:var(--card);border:1px solid var(--bd);border-radius:var(--rlg);padding:16px;cursor:pointer;box-shadow:var(--sh);transition:all .12s}
-.pcard:hover{border-color:var(--acc);box-shadow:var(--sh2)}
+.pcard{background:var(--card);border:1px solid var(--bd);border-radius:var(--rlg);padding:16px;cursor:pointer;box-shadow:var(--sh);transition:all .16s;overflow:hidden}
+.pcard:hover{border-color:var(--acc);box-shadow:var(--sh2);transform:translateY(-2px)}
+.pcard.has-cover{padding-top:0}
+.pcard .pc-cover{margin:0 -16px 12px;height:132px;overflow:hidden;background:var(--card2)}
+.pcard .pc-cover img{width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.pcard:hover .pc-cover img{transform:scale(1.05)}
 .pcard .pc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
 .pcard .pc-id{font-size:10.5px;color:var(--t3);font-weight:600}
 .pcard .pc-name{font-size:14.5px;font-weight:700;margin:1px 0 3px}
@@ -2205,7 +2209,10 @@ function npdCards(){
  if(!list.length)return '<div class="empty">No NPD projects match your filters. <span style="color:var(--acc);cursor:pointer" onclick="newNpd()">Create one →</span></div>';
  return '<div class="pcards">'+list.map(n=>{
    const pct=npdPct(n);const gm=npdInProduction(n)?'bg-green':(n.gate===0?'bg-amber':'bg-blue');const bp=npdBomParts(n).length;
-   return '<div class="pcard" onclick="openNpd(\''+n.id+'\')">'
+   const imgUrlVal=imgUrl(n.image);
+   const cover=imgUrlVal?'<div class="pc-cover"><img src="'+esc(imgUrlVal)+'" loading="lazy"></div>':'';
+   return '<div class="pcard'+(imgUrlVal?' has-cover':'')+'" onclick="openNpd(\''+n.id+'\')">'
+   +cover
    +'<div class="pc-top"><span class="pc-id">'+n.id+'</span><span class="badge '+gm+'">'+npdGateLabel(n)+'</span></div>'
    +'<div class="pc-name">'+esc(n.name)+'</div>'
    +'<div class="pc-meta"><span>'+esc(n.cust)+'</span><span>· '+esc(n.owner)+'</span></div>'
