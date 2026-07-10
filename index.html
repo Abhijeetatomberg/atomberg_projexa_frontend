@@ -1303,12 +1303,29 @@ let _t=null;function autosave(){clearTimeout(_t);_t=setTimeout(saveState,500);}
 // "connect" step — the API address is fixed below. localStorage is kept as an instant local
 // cache only — so the UI never sits blank while a network round-trip is in flight, and the app
 // keeps working (read-only from last-known-good data) if the API is briefly unreachable.
-const DB_STATE_KEY='projexa-main';
+//
+// Each module (NPD, POC, BOM Parts, Weekly Review, ...) is its own Postgres table with its own
+// REST endpoints (already built on the backend) — this is NOT a single JSON blob anymore. Every
+// save diffs each module's array against what was last synced and pushes only the rows that
+// actually changed as real POST/PUT/DELETE calls. That means two people editing different
+// records — even in the same module — never conflict with each other at all; only editing the
+// exact same record concurrently can, which is an ordinary last-write-wins case, not a whole-app
+// freeze. `_dbId` is a hidden bookkeeping field this layer adds to each row purely to address
+// PUT/DELETE calls — nothing in the UI or business logic reads it, and every existing
+// saveState()/autosave() call site elsewhere in the app is unchanged.
+//
+// `users` is the one exception: it keeps riding the old single-row blob endpoint (now scoped to
+// its own small key, not the old shared one) because the per-record `/api/users` endpoint has a
+// different, more careful password contract (hashes server-side, never returns password hashes)
+// that's incompatible with this app's existing all-client-side login/hash-compare model — moving
+// it would risk locking everyone out. Safe to revisit later as a separate, deliberate change.
+const USERS_STATE_KEY='projexa-users';
 const PROD_API_BASE='https://atomberg-projexa-backend-service.onrender.com/api'; // ← the one line to change if the backend ever moves
 let dbApiBase=PROD_API_BASE;
 let dbConnState='checking'; // checking | connected | saving | offline — no manual UI, purely internal bookkeeping
-let dbLastSavedAt=null;
+let usersLastSavedAt=null;
 let _dbSyncTimer=null;
+let _everLoaded=false;
 
 async function dbFetch(path,opts){const res=await fetch(dbApiBase+path,Object.assign({headers:{'Content-Type':'application/json'}},opts||{}));return res;}
 // Fire-and-forget: tells the backend to email someone the moment they're assigned an item.
@@ -1329,37 +1346,183 @@ function isTypingNow(){
  const el=document.activeElement;
  return !!(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.isContentEditable));
 }
+
+// Per-module wire config: REST path + which schema columns to send/read, with a rename map for
+// the handful of spots where the local field name differs from the backend column name. `id`→
+// `code` covers the 3 modules whose human-facing id is a generated code string (RFQ-2026-014
+// etc.); everything else was modeled 1:1 off this same UI, per schema.js's own header comment.
+const SYNC_MODULES=[
+ {key:'rfqs',path:'rfqs',cols:['code','name','cust','vol','price','bd','notes','stage','created','rd','src','bd2','npdCode'],rename:{id:'code',npd:'npdCode'}},
+ {key:'npds',path:'npd-projects',cols:['code','name','cust','businessUnit','devType','customerModel','annualVol','rfqNo','owner','category','gate','koDone','koIso','startDate','launch','bom','risk','fromRfq','fromPoc','charter','team','tasks','gatePlan','gateOverride','gateExit','gateDeliv','gateDocs','npdRes','notifyLog'],rename:{id:'code',start:'startDate'}},
+ {key:'pocs',path:'poc-projects',cols:['code','name','cust','app','owner','reqDate','sampleBy','sampleQty','stage','koDone','koDate','created','skip','promotedTo','charter','parts','tasks','gateExit','gateDeliv'],rename:{id:'code'}},
+ {key:'bomParts',path:'bom-parts',cols:['cat','proj','pno','desc','ost','qty','common','type','mechLead','sourcing','vd','commodity','mfgProcess','volumes','toolMaker','partMaker','fpaStatus','fpaNumber','cavity','tonnage','machineMake','cycleTime','ms']},
+ {key:'lineRows',path:'line-rows',cols:['proj','process','bomPart','existing','readiness','machine','fixture','tools','gauge','cycleTime','capacity','supplier','remarks','ms']},
+ {key:'reviews',path:'reviews',cols:['date','attendees','notes']},
+ {key:'momActions',path:'mom-actions',cols:['proj','text','owner','due','status','raisedOn','reviewId','note']},
+ {key:'ppap',path:'ppap-docs',cols:['proj','element','status','owner','due','submitted','approved','files']},
+ {key:'trials',path:'trials',cols:['trialNo','date','section','dept','originator','trialType','otherTrialType','qty','project','objective','area','drawingAvail','drawingNoRev','bomPartsAvail','majorParts','prevTrialRef','prevResultRemarks','trialStartDate','trialEndDate','duration','coordinator','feedback','finalDecision','storageLocation','machineSlot','slotAssignedDate','hod','status','signedUploaded','submissionDate','closureDate','files']},
+ {key:'resources',path:'resources',cols:['name','role','dept','email','alloc','avail','color']},
+ {key:'budget',path:'budget-items',cols:['desc','proj','npd','cat','planned','actual']},
+ {key:'investments',path:'investments',cols:['proj','process','mftg','tool','numbers','investment','supplier','leadTime']},
+ {key:'npdBomRows',path:'npd-bom-rows',cols:['proj','data']},
+ {key:'samples',path:'samples',cols:['status','cat','project','customer','spec','qty','reqDate','drawing','material','plannedSub','assembly','inspection','submission','remarks','planner','owner']},
+ {key:'stdDocs',path:'std-docs',cols:['title','docNo','category','owner','effDate','remarks','rev','status','pendingRev','files','history']},
+ {key:'ecns',path:'ecns',cols:['ecnNo','projCat','proj','status','desc','ecrAvail','creator','ecnDate','approvedDate','plannedDate','implDate','bomPart','stockLine','stockStore','newPartInward','files']},
+];
+const _syncSnap={}; // moduleKey -> Map(serverId -> JSON string of last-synced wire body)
+function moduleArr(key){
+ switch(key){
+  case 'rfqs':return rfqs;case 'npds':return npds;case 'pocs':return pocs;case 'bomParts':return bomParts;
+  case 'lineRows':return lineRows;case 'reviews':return reviews;case 'momActions':return momActions;
+  case 'ppap':return ppap;case 'trials':return trials;case 'resources':return resources;case 'budget':return budget;
+  case 'investments':return investments;case 'npdBomRows':return npdBomRows;case 'samples':return samples;
+  case 'stdDocs':return stdDocs;case 'ecns':return ecns;
+ }
+}
+function setModuleArr(key,arr){
+ switch(key){
+  case 'rfqs':rfqs=arr;break;case 'npds':npds=arr;break;case 'pocs':pocs=arr;break;case 'bomParts':bomParts=arr;break;
+  case 'lineRows':lineRows=arr;break;case 'reviews':reviews=arr;break;case 'momActions':momActions=arr;break;
+  case 'ppap':ppap=arr;break;case 'trials':trials=arr;break;case 'resources':resources=arr;break;case 'budget':budget=arr;break;
+  case 'investments':investments=arr;break;case 'npdBomRows':npdBomRows=arr;break;case 'samples':samples=arr;break;
+  case 'stdDocs':stdDocs=arr;break;case 'ecns':ecns=arr;break;
+ }
+}
+function syncCols(cfg,srcObj,dir){
+ const out={};
+ cfg.cols.forEach(col=>{
+  let localKey=col;
+  if(cfg.rename)for(const k in cfg.rename)if(cfg.rename[k]===col){localKey=k;break;}
+  if(dir==='toWire'){if(srcObj[localKey]!==undefined)out[col]=srcObj[localKey];}
+  else{out[localKey]=srcObj[col];}
+ });
+ return out;
+}
+function fromServerRow(cfg,row){
+ const obj=syncCols(cfg,row,'fromWire');
+ if(obj.id===undefined)obj.id=row.id; // modules with no code-rename keep the DB's own serial id as their local id
+ obj._dbId=row.id;
+ return obj;
+}
+// Full replace (initial load) or in-place merge (periodic poll) for one module's table.
+async function loadModule(cfg,merge){
+ const res=await dbFetch('/'+cfg.path);
+ if(!res.ok)throw new Error('http '+res.status);
+ const rows=await res.json();
+ const snap=_syncSnap[cfg.key]||(_syncSnap[cfg.key]=new Map());
+ if(!merge){
+  const next=rows.map(r=>{snap.set(r.id,JSON.stringify(syncCols(cfg,r,'toWire')));return fromServerRow(cfg,r);});
+  setModuleArr(cfg.key,next);
+  return true;
+ }
+ const arr=moduleArr(cfg.key);
+ const byDbId=new Map(arr.filter(o=>o._dbId!=null).map(o=>[o._dbId,o]));
+ const seenIds=new Set();let changed=false;
+ rows.forEach(r=>{
+  seenIds.add(r.id);
+  const wireStr=JSON.stringify(syncCols(cfg,r,'toWire'));
+  const local=byDbId.get(r.id);
+  if(!local){arr.push(fromServerRow(cfg,r));snap.set(r.id,wireStr);changed=true;return;}
+  const localWireStr=JSON.stringify(syncCols(cfg,local,'toWire'));
+  if(localWireStr===snap.get(r.id)&&localWireStr!==wireStr){
+   Object.assign(local,syncCols(cfg,r,'fromWire'));snap.set(r.id,wireStr);changed=true;
+  } // else: locally dirty (pending save) or already in sync — leave it alone, never yank an in-progress edit
+ });
+ for(const [id,local] of byDbId){
+  if(seenIds.has(id))continue;
+  const localWireStr=JSON.stringify(syncCols(cfg,local,'toWire'));
+  if(localWireStr===snap.get(id)){const idx=arr.indexOf(local);if(idx>=0){arr.splice(idx,1);changed=true;}snap.delete(id);}
+ }
+ return changed;
+}
+// After a fresh load, local id/code counters must start past whatever's already in the DB, or a
+// newly-created record locally would collide with an existing one.
+function resyncCounters(){
+ const maxNumId=arr=>arr.reduce((m,o)=>{const n=typeof o.id==='number'?o.id:parseInt(String(o.id||'').replace(/^\D+/,''),10);return isNaN(n)?m:Math.max(m,n);},0);
+ const maxCode=arr=>arr.reduce((m,o)=>{const mm=String(o.id||'').match(/(\d+)$/);const n=mm?parseInt(mm[1],10):NaN;return isNaN(n)?m:Math.max(m,n);},0);
+ bomIdCtr=Math.max(bomIdCtr,maxNumId(bomParts)+1);
+ lineIdCtr=Math.max(lineIdCtr,maxNumId(lineRows)+1);
+ reviewCtr=Math.max(reviewCtr,maxNumId(reviews)+1);
+ actionCtr=Math.max(actionCtr,maxNumId(momActions)+1);
+ ppapCtr=Math.max(ppapCtr,maxNumId(ppap)+1);
+ trialCtr=Math.max(trialCtr,maxNumId(trials)+1);
+ invCtr=Math.max(invCtr,maxNumId(investments)+1);
+ npbCtr=Math.max(npbCtr,maxNumId(npdBomRows)+1);
+ sampleCtr=Math.max(sampleCtr,maxNumId(samples)+1);
+ stdDocCtr=Math.max(stdDocCtr,maxNumId(stdDocs)+1);
+ ecnCtr=Math.max(ecnCtr,maxNumId(ecns)+1);
+ rfqCounter=Math.max(rfqCounter,maxCode(rfqs)+1);
+ npdCounter=Math.max(npdCounter,maxCode(npds)+1);
+ pocCounter=Math.max(pocCounter,maxCode(pocs)+1);
+}
+async function loadUsersBlob(){
+ const res=await dbFetch('/app-state/'+USERS_STATE_KEY);
+ if(res.status===404){usersLastSavedAt=null;return;}
+ if(!res.ok)throw new Error('http '+res.status);
+ const row=await res.json();
+ if(row.data&&Array.isArray(row.data.users))users=row.data.users;
+ usersLastSavedAt=row.updatedAt;
+}
+async function saveUsersBlob(){
+ const body={data:{users},updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||''};
+ let res=await dbFetch('/app-state/'+USERS_STATE_KEY,{method:'PUT',body:JSON.stringify(Object.assign({},body,{expectedUpdatedAt:usersLastSavedAt}))});
+ if(res.status===409)res=await dbFetch('/app-state/'+USERS_STATE_KEY,{method:'PUT',body:JSON.stringify(Object.assign({},body,{expectedUpdatedAt:null}))});
+ if(res.ok){const row=await res.json();usersLastSavedAt=row.updatedAt;}
+}
+// Diff one module's local array against what was last synced and push only what changed.
+async function saveModule(cfg){
+ const arr=moduleArr(cfg.key);
+ const snap=_syncSnap[cfg.key]||(_syncSnap[cfg.key]=new Map());
+ const liveIds=new Set();
+ for(const row of arr){
+  const wire=syncCols(cfg,row,'toWire');const wireStr=JSON.stringify(wire);
+  try{
+   if(row._dbId==null){
+    const res=await dbFetch('/'+cfg.path,{method:'POST',body:JSON.stringify(wire)});
+    if(res.ok){const saved=await res.json();row._dbId=saved.id;snap.set(saved.id,JSON.stringify(syncCols(cfg,saved,'toWire')));liveIds.add(saved.id);}
+    continue;
+   }
+   liveIds.add(row._dbId);
+   if(snap.get(row._dbId)===wireStr)continue; // unchanged since last sync
+   let res=await dbFetch('/'+cfg.path+'/'+row._dbId,{method:'PUT',body:JSON.stringify(wire)});
+   if(res.status===404){ // someone deleted this row remotely — recreate it rather than lose the edit
+    res=await dbFetch('/'+cfg.path,{method:'POST',body:JSON.stringify(wire)});
+    if(res.ok){const saved=await res.json();row._dbId=saved.id;snap.set(saved.id,JSON.stringify(syncCols(cfg,saved,'toWire')));liveIds.add(saved.id);}
+    continue;
+   }
+   if(res.ok){const saved=await res.json();snap.set(row._dbId,JSON.stringify(syncCols(cfg,saved,'toWire')));}
+  }catch(e){/* offline / unreachable — this row just retries on the next save tick */}
+ }
+ for(const id of [...snap.keys()]){
+  if(liveIds.has(id))continue;
+  try{await dbFetch('/'+cfg.path+'/'+id,{method:'DELETE'});}catch(e){}
+  snap.delete(id);
+ }
+}
 async function loadFromDb(silent){
  dbConnState='checking';
  try{
-  const res=await dbFetch('/app-state/'+DB_STATE_KEY);
-  if(res.status===404){dbConnState='connected';dbLastSavedAt=null;return false;} // DB reachable, nothing saved yet
-  if(!res.ok)throw new Error('http '+res.status);
-  const row=await res.json();
-  if(row.updatedAt===dbLastSavedAt){dbConnState='connected';return false;} // nothing new — no-op, don't touch the DOM
-  applyState(row.data);
+  const merge=_everLoaded;
+  const results=await Promise.all(SYNC_MODULES.map(cfg=>loadModule(cfg,merge)));
+  await loadUsersBlob();
+  const changed=merge?results.some(Boolean):true;
+  if(changed){resyncCounters();npds.forEach(p=>{initNpd(p);ensureTaskPlan(p);});pocs.forEach(pocInit);}
   try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){}
-  dbLastSavedAt=row.updatedAt;dbConnState='connected';
-  if(!silent)render();
-  return true;
+  dbConnState='connected';_everLoaded=true;
+  if(!silent&&changed)render();
+  return changed;
  }catch(e){dbConnState='offline';return false;}
 }
-async function saveToDb(force){
+async function saveToDb(){
+ dbConnState='saving';
  try{
-  const res=await dbFetch('/app-state/'+DB_STATE_KEY,{method:'PUT',body:JSON.stringify({data:collectState(),updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'',expectedUpdatedAt:force?null:dbLastSavedAt})});
-  if(res.status===409){
-   // Someone else saved first. Never yank the DOM while a field is focused — that's what was
-   // cutting off mid-keystroke typing. Just push our copy through as the new latest instead;
-   // the periodic background poll (below) is what keeps everyone's screens converging.
-   const res2=await dbFetch('/app-state/'+DB_STATE_KEY,{method:'PUT',body:JSON.stringify({data:collectState(),updatedBy:(CURRENT_USER&&(CURRENT_USER.name||CURRENT_USER.user))||'',expectedUpdatedAt:null})});
-   if(res2.ok){const row=await res2.json();dbLastSavedAt=row.updatedAt;dbConnState='connected';}
-   return;
-  }
-  if(!res.ok)throw new Error('http '+res.status);
-  const row=await res.json();dbLastSavedAt=row.updatedAt;dbConnState='connected';
+  await Promise.all(SYNC_MODULES.map(saveModule));
+  await saveUsersBlob();
+  try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){}
+  dbConnState='connected';
  }catch(e){dbConnState='offline';}
 }
-function scheduleDbSync(){clearTimeout(_dbSyncTimer);dbConnState='saving';_dbSyncTimer=setTimeout(()=>saveToDb(false),1200);}
+function scheduleDbSync(){clearTimeout(_dbSyncTimer);dbConnState='saving';_dbSyncTimer=setTimeout(saveToDb,1200);}
 // Keeps everyone's screen live without anyone having to refresh: polls for teammates' changes
 // every few seconds, but only applies/re-renders them when the user isn't mid-typing, so it
 // can never interrupt an in-progress edit. If typing, it just tries again on the next tick.
