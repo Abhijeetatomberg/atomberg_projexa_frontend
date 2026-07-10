@@ -2552,7 +2552,7 @@ function bomDetail(id){const b=bomParts.find(x=>x.id===id);if(!b)return;ensureBo
    +fld('No. of Cavity','cavity')+fld('Machine Tonnage','tonnage')
    +fld('Machine Make','machineMake')+fld('Cycle Time','cycleTime')
   +'</div>'
- +'</div><div class="modal-f"><button class="btn b-gho" style="color:var(--red)" onclick="delBomPart('+id+')">Delete part</button><div style="flex:1"></div><button class="btn b-pri" onclick="closeModal()">Done</button></div>');
+ +'</div><div class="modal-f">'+(isAdmin()?'<button class="btn b-gho" style="color:var(--red)" onclick="delBomPart('+id+')">Delete part</button>':'')+'<div style="flex:1"></div><button class="btn b-pri" onclick="closeModal()">Done</button></div>');
 }
 function addBomPart(proj){
  modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Add BOM Part</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
@@ -2567,7 +2567,7 @@ function saveBomPart(proj){const desc=$('bp-desc').value.trim();if(!desc){toast(
  const pr=proj||($('bp-proj')&&$('bp-proj').value)||'';
  const b={id:bomIdCtr++,cat:'',proj:pr,pno:$('bp-pno').value.trim(),desc,ost:$('bp-ost').value,qty:$('bp-qty').value.trim(),common:$('bp-common').value,type:$('bp-type').value,mechLead:'',sourcing:$('bp-sourcing').value.trim(),vd:'',commodity:'',mfgProcess:'',volumes:'',toolMaker:$('bp-maker').value.trim(),partMaker:$('bp-maker').value.trim(),fpaStatus:'',fpaNumber:'',cavity:'',tonnage:'',machineMake:'',cycleTime:'',ms:{}};
  ensureBomRow(b);bomParts.push(b);saveState();closeModal();toast('Part added','success');render();}
-function delBomPart(id){if(!confirm('Delete this BOM part?'))return;bomParts=bomParts.filter(x=>x.id!==id);saveState();closeModal();toast('Part deleted','success');render();}
+function delBomPart(id){if(!isAdmin()){toast('Only an admin can delete a BOM part');return;}if(!confirm('Delete this BOM part?'))return;bomParts=bomParts.filter(x=>x.id!==id);saveState();closeModal();toast('Part deleted','success');render();}
 // ---- Excel / CSV upload ----
 function bomTemplate(){const h=['Part No','Part description','Overall Part status','Quantity','Common Part (New/Old)','Dev/BO/Assy','Mechanical lead','Sourcing','VD','Commodity','Manufacturing Process','Volumes/Month','Tool maker','Part Maker','FPA status'];
  const ex=['A290501','Motor Assembly','On track','1 Nos','New','Dev','Avadhut','Anil','Sourabh','Casting','Machining','23K','Syentics','Silicon','FPA pending'];
@@ -2844,7 +2844,8 @@ function bomDetailSheet(){
   +'<th class="bx-id" rowspan="2">Part No</th><th class="bx-id2" rowspan="2">Description</th>'
   +'<th class="st-def" rowspan="2">Type</th><th class="st-def" rowspan="2">Qty</th><th class="st-def" rowspan="2">New/Old</th><th class="st-def" rowspan="2">Overall Status</th><th class="st-def" rowspan="2">Sourcing</th><th class="st-def" rowspan="2">Tool Maker</th><th class="st-def" rowspan="2">Part Maker</th>';
  BOM_MS.forEach(m=>{h1+='<th class="st-'+BOM_STAGE[m[0]]+'" colspan="2">'+m[1]+'</th>';});
- h1+='<th class="st-fpa" rowspan="2">FPA Status</th><th class="st-fpa" rowspan="2">FPA Number</th><th class="st-fpa" rowspan="2">Cavity</th><th class="st-fpa" rowspan="2">Tonnage</th><th class="st-fpa" rowspan="2">Machine</th><th class="st-fpa" rowspan="2">Cycle</th></tr>';
+ h1+='<th class="st-fpa" rowspan="2">FPA Status</th><th class="st-fpa" rowspan="2">FPA Number</th><th class="st-fpa" rowspan="2">Cavity</th><th class="st-fpa" rowspan="2">Tonnage</th><th class="st-fpa" rowspan="2">Machine</th><th class="st-fpa" rowspan="2">Cycle</th>'+(isAdmin()?'<th rowspan="2" style="width:40px"></th>':'')+'</tr>';
+ const colCount=42+(isAdmin()?1:0);
  let h2='<tr>';BOM_MS.forEach(m=>{const st=BOM_STAGE[m[0]];h2+='<th class="st-'+st+' sub">Plan</th><th class="st-'+st+' sub">Actual</th>';});h2+='</tr>';
  const rows=tooMany?'':list.map(b=>{ensureBomRow(b);
    const ex=bomLocked(b);
@@ -2884,6 +2885,7 @@ function bomDetailSheet(){
    r+=defCell('st-fpa','tonnage',txtCtrl('tonnage',b.tonnage),b.tonnage);
    r+=defCell('st-fpa','machineMake',txtCtrl('machineMake',b.machineMake),b.machineMake);
    r+=defCell('st-fpa','cycleTime',txtCtrl('cycleTime',b.cycleTime),b.cycleTime);
+   if(isAdmin())r+='<td onclick="event.stopPropagation()" style="text-align:center"><span class="lnk" style="color:var(--red);cursor:pointer" title="Delete part (admin)" onclick="delBomPart('+b.id+')">🗑</span></td>';
    r+='</tr>';return r;}).join('');
  return ''
  +'<div class="phead"><div><h1><span class="lnk" onclick="bomView=\'home\';render()">BOM Tracker</span> › Detailed Sheet</h1><div class="sub">Add all dates in one place — colour-coded by stage</div></div>'
@@ -2892,7 +2894,7 @@ function bomDetailSheet(){
    +'<div class="bom-stagekey"><span class="sk st-def">Definition</span><span class="sk st-design">Design</span><span class="sk st-tool">Tooling</span><span class="sk st-val">Validation</span><span class="sk st-fpa">FPA &amp; Specs</span></div>'
    +'<div class="bom-stagekey" style="margin-left:auto"><span style="font-size:10px;color:var(--t3);margin-right:2px">Status:</span><span class="sk2" style="background:#e3f8ec">Existing</span><span class="sk2" style="background:#9ff0bf">Completed</span><span class="sk2" style="background:#9ff0bf;color:#c0211f">Delayed but Completed</span><span class="sk2" style="background:#fde0e0">Delayed</span><span class="sk2" style="background:#f6a6a6">At Risk</span></div></div>'
    +(ro?'<div style="font-size:11.5px;color:var(--t2);margin:0 0 9px">Read-only overview of <b>'+list.length+'</b> parts across all projects — coloured by status. <b>Select a project</b> above to edit parts inline (or use <b>Add Part</b> — it lets you pick the project).</div>':'<div style="font-size:11.5px;color:var(--t2);margin:0 0 9px">In-process parts are editable. <b>Completed</b> rows are locked — '+(isAdmin()?'you are an admin, so you can still edit them and change status.':'only an admin can edit them or change their status.')+'</div>')
- +'<div class="bom-fullbleed"><div class="card" style="padding:0"><div class="bx-wrap"><table class="bx"><thead>'+h1+h2+'</thead><tbody>'+(tooMany?'<tr><td colspan="42" class="empty" style="position:static;padding:34px">Showing all projects would load <b>'+list.length+'</b> parts at once. Pick a project above to edit its dates quickly, or use search.</td></tr>':(rows||'<tr><td colspan="42" class="empty">No parts. Add a part or upload an Excel.</td></tr>'))+'</tbody></table></div></div></div>';
+ +'<div class="bom-fullbleed"><div class="card" style="padding:0"><div class="bx-wrap"><table class="bx"><thead>'+h1+h2+'</thead><tbody>'+(tooMany?'<tr><td colspan="'+colCount+'" class="empty" style="position:static;padding:34px">Showing all projects would load <b>'+list.length+'</b> parts at once. Pick a project above to edit its dates quickly, or use search.</td></tr>':(rows||'<tr><td colspan="'+colCount+'" class="empty">No parts. Add a part or upload an Excel.</td></tr>'))+'</tbody></table></div></div></div>';
 }
 
 // ════════════════════════════ LINE READINESS ════════════════════════════
