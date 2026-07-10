@@ -1230,10 +1230,10 @@ let budget=(function(){
 
 // ════════════════════════════ PERSISTENCE ════════════════════════════
 const KEY='atomberg_projexa_fresh';
-function collectState(){return {rfqs,rfqCounter,npds,npdCounter,bomParts,bomIdCtr,lineRows,lineIdCtr,reviews,reviewCtr,momActions,actionCtr,pocs,pocCounter,ppap,ppapCtr,trials,trialCtr,resources,budget,investments,invCtr,npdBomRows,npbCtr,samples,sampleCtr,stdDocs,stdDocCtr,ecns,ecnCtr,users};}
+function collectState(){return {rfqs,rfqCounter,npds,npdCounter,bomParts,bomIdCtr,lineRows,lineIdCtr,reviews,reviewCtr,momActions,actionCtr,pocs,pocCounter,ppap,ppapCtr,trials,trialCtr,resources,budget,investments,invCtr,npdBomRows,npbCtr,samples,sampleCtr,stdDocs,stdDocCtr,ecns,ecnCtr,shopfloorIssues,sfCtr,users};}
 function applyState(s){if(!s)return;if(s.rfqs)rfqs=s.rfqs;if(s.rfqCounter)rfqCounter=s.rfqCounter;if(s.npds)npds=s.npds;if(s.npdCounter)npdCounter=s.npdCounter;if(s.bomParts)bomParts=s.bomParts;if(s.bomIdCtr)bomIdCtr=s.bomIdCtr;if(s.lineRows)lineRows=s.lineRows;if(s.lineIdCtr)lineIdCtr=s.lineIdCtr;if(s.reviews)reviews=s.reviews;if(s.reviewCtr)reviewCtr=s.reviewCtr;if(s.momActions)momActions=s.momActions;if(s.actionCtr)actionCtr=s.actionCtr;if(s.pocs)pocs=s.pocs;if(s.pocCounter)pocCounter=s.pocCounter;if(s.ppap)ppap=s.ppap;if(s.ppapCtr)ppapCtr=s.ppapCtr;
  if(s.trials)trials=s.trials;if(s.trialCtr)trialCtr=s.trialCtr;
- if(Array.isArray(s.users)&&s.users.length)users=s.users;if(s.resources)resources=s.resources;if(s.budget)budget=s.budget;if(s.investments)investments=s.investments;if(s.invCtr)invCtr=s.invCtr;if(s.npdBomRows)npdBomRows=s.npdBomRows;if(s.npbCtr)npbCtr=s.npbCtr;if(s.samples)samples=s.samples;if(s.sampleCtr)sampleCtr=s.sampleCtr;if(s.stdDocs)stdDocs=s.stdDocs;if(s.stdDocCtr)stdDocCtr=s.stdDocCtr;if(s.ecns)ecns=s.ecns;if(s.ecnCtr)ecnCtr=s.ecnCtr;}
+ if(Array.isArray(s.users)&&s.users.length)users=s.users;if(s.resources)resources=s.resources;if(s.budget)budget=s.budget;if(s.investments)investments=s.investments;if(s.invCtr)invCtr=s.invCtr;if(s.npdBomRows)npdBomRows=s.npdBomRows;if(s.npbCtr)npbCtr=s.npbCtr;if(s.samples)samples=s.samples;if(s.sampleCtr)sampleCtr=s.sampleCtr;if(s.stdDocs)stdDocs=s.stdDocs;if(s.stdDocCtr)stdDocCtr=s.stdDocCtr;if(s.ecns)ecns=s.ecns;if(s.ecnCtr)ecnCtr=s.ecnCtr;if(s.shopfloorIssues)shopfloorIssues=s.shopfloorIssues;if(s.sfCtr)sfCtr=s.sfCtr;}
 function saveState(){try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){}scheduleDbSync();}
 let _saveT=null;
 function saveSoon(){if(_saveT)clearTimeout(_saveT);_saveT=setTimeout(function(){_saveT=null;saveState();},700);}
@@ -1376,6 +1376,7 @@ const SYNC_MODULES=[
  {key:'samples',path:'samples',cols:['status','cat','project','customer','spec','qty','reqDate','drawing','material','plannedSub','assembly','inspection','submission','remarks','planner','owner']},
  {key:'stdDocs',path:'std-docs',cols:['title','docNo','category','owner','effDate','remarks','rev','status','pendingRev','files','history']},
  {key:'ecns',path:'ecns',cols:['ecnNo','projCat','proj','status','desc','ecrAvail','creator','ecnDate','approvedDate','plannedDate','implDate','bomPart','stockLine','stockStore','newPartInward','files']},
+ {key:'shopfloorIssues',path:'shopfloor-issues',cols:['cat','station','problem','action','resp','targetDate','status','remarks','files']},
 ];
 const _syncSnap={}; // moduleKey -> Map(serverId -> JSON string of last-synced wire body)
 function moduleArr(key){
@@ -1384,7 +1385,7 @@ function moduleArr(key){
   case 'lineRows':return lineRows;case 'reviews':return reviews;case 'momActions':return momActions;
   case 'ppap':return ppap;case 'trials':return trials;case 'resources':return resources;case 'budget':return budget;
   case 'investments':return investments;case 'npdBomRows':return npdBomRows;case 'samples':return samples;
-  case 'stdDocs':return stdDocs;case 'ecns':return ecns;
+  case 'stdDocs':return stdDocs;case 'ecns':return ecns;case 'shopfloorIssues':return shopfloorIssues;
  }
 }
 function setModuleArr(key,arr){
@@ -1393,7 +1394,7 @@ function setModuleArr(key,arr){
   case 'lineRows':lineRows=arr;break;case 'reviews':reviews=arr;break;case 'momActions':momActions=arr;break;
   case 'ppap':ppap=arr;break;case 'trials':trials=arr;break;case 'resources':resources=arr;break;case 'budget':budget=arr;break;
   case 'investments':investments=arr;break;case 'npdBomRows':npdBomRows=arr;break;case 'samples':samples=arr;break;
-  case 'stdDocs':stdDocs=arr;break;case 'ecns':ecns=arr;break;
+  case 'stdDocs':stdDocs=arr;break;case 'ecns':ecns=arr;break;case 'shopfloorIssues':shopfloorIssues=arr;break;
  }
 }
 function syncCols(cfg,srcObj,dir){
@@ -1464,6 +1465,7 @@ function resyncCounters(){
  sampleCtr=Math.max(sampleCtr,maxNumId(samples)+1);
  stdDocCtr=Math.max(stdDocCtr,maxNumId(stdDocs)+1);
  ecnCtr=Math.max(ecnCtr,maxNumId(ecns)+1);
+ sfCtr=Math.max(sfCtr,maxNumId(shopfloorIssues)+1);
  rfqCounter=Math.max(rfqCounter,maxCode(rfqs)+1);
  npdCounter=Math.max(npdCounter,maxCode(npds)+1);
  pocCounter=Math.max(pocCounter,maxCode(pocs)+1);
@@ -1805,6 +1807,7 @@ const NAV=[
  {k:'ai',label:'Ask AI',icon:'ai',color:'#e11d48',desc:'Ask questions about your live data'},
  {k:'trial',label:'Trial Tracker',icon:'trial',color:'#0d9488',desc:'Trial request & approval forms'},
  {k:'ecn',label:'ECN Tracker',icon:'sync',color:'#8b5cf6',desc:'Engineering change notices'},
+ {k:'shopfloor',label:'Shopfloor Issue Tracker',icon:'warn',color:'#dc2626',desc:'Line/station issues, observations & corrective actions'},
  {k:'investment',label:'Investment',icon:'invest',color:'#16a34a',desc:'Capital & tooling investment'},
  {k:'budget',label:'Budget',icon:'budget',color:'#65a30d',desc:'Budget vs. actuals'},
  {k:'resources',label:'Resources',icon:'res',color:'#0ea5e9',desc:'Team allocation'},
@@ -1861,6 +1864,7 @@ function render(){
  else if(route==='trial')v.innerHTML=sub?viewTrialDetail(sub):viewTrial();
  else if(route==='ai')v.innerHTML=viewAskAI();
  else if(route==='ecn')v.innerHTML=viewEcn();
+ else if(route==='shopfloor')v.innerHTML=viewShopfloor();
  else if(route==='resources')v.innerHTML=viewResources();
  else if(route==='investment')v.innerHTML=viewInvestment();
  else if(route==='budget')v.innerHTML=viewBudget();
@@ -1893,9 +1897,15 @@ function viewHome(){
    +'<div class="home-tile-desc">'+(n.desc||'')+'</div>'
    +'</div>').join('');
  return ''
- +'<div class="phead"><div><h1>'+(name?'Welcome, '+esc(name.split(' ')[0]):'Welcome')+'</h1><div class="sub">Pick a module below, or use the sidebar any time.</div></div></div>'
+ +'<div class="phead"><div><h1>'+(name?'Welcome, '+esc(name.split(' ')[0]):'Welcome')+'</h1><div class="sub">Pick a module below, or use the sidebar any time.</div></div>'
+   +(isAdmin()?'<div class="acts"><button class="btn b-gho" onclick="backupAllData()">'+svg(I.export)+'Back Up All Data</button></div>':'')+'</div>'
  +'<div class="home-grid">'+tiles+'</div>';
 }
+// Admin-only: downloads a single .zip with every table's data plus the real attachment files
+// (not just their S3 pointers) — a standalone snapshot, not just database rows.
+function backupAllData(){if(!isAdmin()){toast('Admins only');return;}
+ toast('Preparing backup — this can take a moment…','info');
+ window.open(dbApiBase+'/backup','_blank');}
 function viewDashboard(){
  const open=rfqs.filter(r=>!['won','lost','archived'].includes(r.stage));
  const won=rfqs.filter(r=>r.stage==='won').length, lost=rfqs.filter(r=>r.stage==='lost').length;
@@ -5235,6 +5245,7 @@ function exportProjectFile(kind,id){
 
 // ════════════════════════════ ECN TRACKER ════════════════════════════
 let ecns=[],ecnCtr=1,ecnFilter='',ecnSearch='',ecnStatFilter='',ecnSort='';
+let shopfloorIssues=[],sfCtr=1,sfFilter='',sfStatFilter='',sfSearch='';
 const ECN_STATUS=['Draft','Under Approval','Approved','Implemented','Rejected','On Hold'];
 const ECN_SORTS=['Oldest First','ECN No','Status','Project','Planned Date'];
 const ECN_SORT_FN={
@@ -5359,9 +5370,97 @@ function ecnImportRows(rows){if(!rows||!rows.length){toast('Empty file');return;
    ecns.push({id:ecnCtr++,ecnNo:g(C.no),projCat:g(C.cat),proj:g(C.proj),status:normSt(g(C.status)),desc:g(C.desc),ecrAvail:g(C.ecr),creator:g(C.creator),ecnDate:ecnDateNorm(g(C.date)),approvedDate:ecnDateNorm(g(C.appr)),plannedDate:ecnDateNorm(g(C.plan)),implDate:ecnDateNorm(g(C.impl)),bomPart:g(C.bom),stockLine:g(C.sl),stockStore:g(C.ss),newPartInward:ecnDateNorm(g(C.inward)),files:[]});added++;}
  saveState();render();toast(added+' ECNs imported','success');}
 
+// ════════════════════════ SHOPFLOOR ISSUE TRACKER ════════════════════════
+const SF_STATUS=['Pending','In Process','On Track','Delayed','Closed'];
+function sfStBadge(s){const m={'Pending':['#475569','#e2e8f0'],'In Process':['#b45309','#fef3c7'],'On Track':['#047857','#d1fae5'],'Delayed':['#b91c1c','#fee2e2'],'Closed':['#1e40af','#dbeafe']}[s]||['#475569','#e2e8f0'];return '<span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;color:'+m[0]+';background:'+m[1]+';white-space:nowrap">'+esc(s||'Pending')+'</span>';}
+function sfStatusClass(s){s=(s||'').toLowerCase();if(s==='closed')return 'ecn-done';if(s==='on track')return 'ecn-appr';if(s==='delayed')return 'ecn-rej';if(s==='in process'||s==='pending')return 'ecn-pend';return '';}
+function sfCats(){const s=new Set();shopfloorIssues.forEach(x=>{if(x.cat)s.add(x.cat);});BU_OPTS.forEach(c=>s.add(c));return [...s];}
+function sfMatch(x){if(sfFilter&&x.cat!==sfFilter)return false;if(sfStatFilter&&x.status!==sfStatFilter)return false;if(sfSearch){return matchQ([x.station,x.problem,x.action,x.resp,x.remarks].join(' '),sfSearch);}return true;}
+function sfPhotosCell(x){const canR=canEditField(x.resp,'restricted');
+ const chips=(x.files||[]).map((fl,fi)=>fl.id
+   ?'<span class="chip-file" style="padding:0"><img src="'+attachmentUrl(fl.id)+'" style="width:30px;height:30px;object-fit:cover;border-radius:5px;cursor:pointer" onclick="window.open(\''+attachmentUrl(fl.id)+'\',\'_blank\')">'+(canR?'<span class="xf" onclick="delSfFile('+x.id+','+fi+')">✕</span>':'')+'</span>'
+   :'<span class="chip-file" style="font-size:10px" onclick="window.open(\''+esc(fl.link||'')+'\',\'_blank\')">'+svg(I.doc)+esc(fl.name||'link')+(canR?'<span class="xf" onclick="delSfFile('+x.id+','+fi+')">✕</span>':'')+'</span>').join('');
+ return '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;min-width:90px">'+chips+(canR?'<span class="lnk" style="font-size:10.5px;white-space:nowrap" onclick="addSfFile('+x.id+')">+ Add</span>':'')+'</div>';
+}
+function viewShopfloor(){const admin=isAdmin();
+ let list=shopfloorIssues.filter(sfMatch);
+ const cats=[...new Set(shopfloorIssues.map(x=>x.cat).filter(Boolean))];
+ const chips='<select class="fsel" onchange="sfFilter=this.value;render()"><option value=""'+(sfFilter===''?' selected':'')+'>All Categories ('+shopfloorIssues.length+')</option>'+cats.map(c=>'<option value="'+esc(c)+'"'+(sfFilter===c?' selected':'')+'>'+esc(c)+' ('+shopfloorIssues.filter(x=>x.cat===c).length+')</option>').join('')+'</select>';
+ const rows=list.map((x,idx)=>{
+   const canR=canEditField(x.resp,'restricted');
+   const sc=sfStatusClass(x.status);
+   const tx=(f)=>admin?'<textarea class="ecx" onchange="setSf('+x.id+',\''+f+'\',this.value)">'+esc(x[f]||'')+'</textarea>':'<span class="roc">'+esc(x[f]||'—')+'</span>';
+   const dt=admin?'<input type="date" class="gx dt" value="'+esc(x.targetDate||'')+'" onchange="setSf('+x.id+',\'targetDate\',this.value)">':'<span class="roc">'+(x.targetDate?fmtNice(new Date(x.targetDate)):'—')+'</span>';
+   const resp=admin?'<select class="gx gxs" onchange="setSf('+x.id+',\'resp\',this.value)">'+ownerOpts(x.resp)+'</select>':'<span class="roc">'+esc(x.resp||'—')+'</span>';
+   const st=canR?'<select class="gx gxs" onchange="setSf('+x.id+',\'status\',this.value)">'+SF_STATUS.map(s=>'<option'+(x.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>':sfStBadge(x.status);
+   const rem=canR?'<textarea class="ecx" onchange="setSf('+x.id+',\'remarks\',this.value)">'+esc(x.remarks||'')+'</textarea>':'<span class="roc">'+esc(x.remarks||'—')+'</span>';
+   return '<tr class="'+sc+'">'
+    +'<td class="mut" style="text-align:center">'+(idx+1)+'</td>'
+    +'<td style="min-width:110px">'+tx('station')+'</td>'
+    +'<td style="min-width:260px;max-width:340px">'+tx('problem')+'</td>'
+    +'<td style="min-width:220px;max-width:300px">'+tx('action')+'</td>'
+    +'<td>'+sfPhotosCell(x)+'</td>'
+    +'<td style="min-width:120px">'+resp+'</td>'
+    +'<td>'+dt+'</td>'
+    +'<td style="min-width:110px">'+st+'</td>'
+    +'<td style="min-width:180px">'+rem+'</td>'
+    +(admin?'<td style="text-align:right;white-space:nowrap"><button class="btn b-gho b-sm" style="color:var(--red)" onclick="delSfId('+x.id+')">Remove</button></td>':'')
+    +'</tr>';}).join('');
+ const head='<thead><tr><th>Sr. No</th><th>Station / Machine</th><th>Problem / Observation</th><th>Action Planned</th><th>Photos</th><th>Responsibility</th><th>Target Date</th><th>Status</th><th>Remarks</th>'+(admin?'<th style="text-align:right">Actions</th>':'')+'</tr></thead>';
+ const table=shopfloorIssues.length?(list.length?'<div class="card"><div class="tblwrap"><table class="tbl" style="min-width:1500px">'+head+'<tbody>'+rows+'</tbody></table></div></div>':'<div class="card"><div class="card-b"><div class="empty" style="position:static">No issues match this filter.</div></div></div>')
+   :'<div class="card"><div class="card-b"><div class="empty" style="position:static">No shopfloor issues logged yet.<br><span style="font-size:11px">'+(isPM()?'Click <b>Add Issue</b> to log a line/station observation.':'Nothing has been logged yet.')+'</span></div></div></div>';
+ return ''
+ +'<div class="phead"><div><h1>Shopfloor Issue Tracker</h1><div class="sub">Line/station issues, observations &amp; corrective actions.</div></div>'
+   +(isPM()?'<div class="acts"><button class="btn b-pri" onclick="addSfModal()">'+svg(I.plus)+'Add Issue</button></div>':'')+'</div>'
+ +'<div class="stats c4" style="margin-bottom:14px">'
+   +tile({ico:'warn',color:'#0f172a',tint:'#e2e8f0',val:shopfloorIssues.length,lbl:'Total Issues'})
+   +tile({ico:'clock',color:'#b45309',tint:'#fef3c7',val:shopfloorIssues.filter(x=>x.status==='Pending'||x.status==='In Process').length,lbl:'Open'})
+   +tile({ico:'block',color:'#b91c1c',tint:'#fee2e2',val:shopfloorIssues.filter(x=>x.status==='Delayed').length,lbl:'Delayed'})
+   +tile({ico:'check',color:'#1e40af',tint:'#dbeafe',val:shopfloorIssues.filter(x=>x.status==='Closed').length,lbl:'Closed'})
+ +'</div>'
+ +'<div class="card" style="margin-bottom:12px"><div class="card-b" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+chips+sel2('sfStatFilter','All Status',SF_STATUS,sfStatFilter)+'<div class="search" style="min-width:220px;margin-left:auto">'+svg(I.search)+'<input placeholder="Search station, problem, action…" value="'+esc(sfSearch)+'" id="gsearch" oninput="sfSearch=this.value;render()"></div></div></div>'
+ +table;}
+function setSf(id,f,v){const x=shopfloorIssues.find(y=>y.id===id);if(!x)return;
+ const restricted=f==='status'||f==='remarks';
+ if(!canEditField(x.resp,restricted?'restricted':'full')){toast('Only the assigned owner or an admin can update this');render();return;}
+ x[f]=v;saveSoon();if(f==='status')render();}
+function delSfId(id){const i=shopfloorIssues.findIndex(x=>x.id===id);if(i<0)return;if(!confirm('Remove this issue?'))return;shopfloorIssues.splice(i,1);saveState();render();}
+function addSfModal(){if(!isPM()){toast('Only Project Management can add a new issue');return;}sfModal(null);}
+function editSf(i){sfModal(i);}
+function sfModal(i){const x=(i!=null)?shopfloorIssues[i]:{cat:'',station:'',problem:'',action:'',resp:'',targetDate:'',status:'Pending',remarks:''};
+ const cl=v=>esc(v||'');
+ modal('<div class="modal-h"><div class="mt">'+svg(I.warn)+(i!=null?'Edit Issue':'Add Shopfloor Issue')+'</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+ +'<div class="fg2"><div class="fl"><label>Business Unit</label><select id="sf-cat"><option value="">Select…</option>'+BU_OPTS.map(b=>'<option'+(x.cat===b?' selected':'')+'>'+b+'</option>').join('')+'</select></div>'
+   +'<div class="fl"><label>Station / Machine</label><input id="sf-station" value="'+cl(x.station)+'" placeholder="e.g. All Stations"></div></div>'
+ +'<div class="fl"><label>Problem / Observation</label><textarea id="sf-problem" rows="3" placeholder="What was observed">'+cl(x.problem)+'</textarea></div>'
+ +'<div class="fl"><label>Action Planned</label><textarea id="sf-action" rows="2" placeholder="Corrective action">'+cl(x.action)+'</textarea></div>'
+ +'<div class="fg2"><div class="fl"><label>Responsibility</label><select id="sf-resp">'+ownerOpts(x.resp)+'</select></div>'
+   +'<div class="fl"><label>Target Date</label><input type="date" id="sf-target" value="'+cl(x.targetDate)+'"></div></div>'
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveSf('+(i!=null?i:'null')+')">'+(i!=null?'Save':'Add Issue')+'</button></div>');}
+function saveSf(i){const v=id=>{const el=$(id);return el?el.value.trim():'';};
+ const obj={cat:v('sf-cat'),station:v('sf-station'),problem:v('sf-problem'),action:v('sf-action'),resp:v('sf-resp'),targetDate:v('sf-target')};
+ if(!obj.problem){toast('Problem / Observation is required');return;}
+ if(i!=null&&shopfloorIssues[i]){Object.assign(shopfloorIssues[i],obj);toast('Issue updated','success');}
+ else{obj.status='Pending';obj.remarks='';obj.files=[];obj.id=sfCtr++;shopfloorIssues.push(obj);toast('Issue added','success');}
+ if(obj.resp)notifyAssigned(obj.resp,obj.problem,'Shopfloor Issue Tracker',obj.station,obj.targetDate);
+ saveState();closeModal();render();}
+async function addSfFile(id){const x=shopfloorIssues.find(y=>y.id===id);if(!x)return;
+ if(!canEditField(x.resp,'restricted')){toast('Only the assigned owner or an admin can add a photo');return;}
+ modal('<div class="modal-h"><div class="mt">'+svg(I.box)+'Add Photo</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
+ +attachModalBody('e.g. station-4.jpg')
+ +'</div><div class="modal-f"><button class="btn b-gho" onclick="closeModal()">Cancel</button><button class="btn b-pri" onclick="saveSfFile('+id+')">Attach</button></div>');}
+async function saveSfFile(id){const x=shopfloorIssues.find(y=>y.id===id);if(!x)return;if(!x.files)x.files=[];
+ let rec;try{rec=await readAttachInputsAndUpload({module:'shopfloor-issue',refId:String(id)});}catch(e){toast(e.message||'Upload failed','error');return;}
+ if(!rec){toast('Choose a file or enter a link');return;}
+ x.files.push(rec);toast(rec.id?'Photo uploaded':'Reference saved','success');
+ saveState();closeModal();render();}
+function delSfFile(id,fi){const x=shopfloorIssues.find(y=>y.id===id);if(!x)return;
+ if(!canEditField(x.resp,'restricted')){toast('Only the assigned owner or an admin can remove a photo');return;}
+ const fl=x.files[fi];if(fl&&fl.id)deleteAttachmentRemote(fl.id);x.files.splice(fi,1);saveState();render();}
+
 // ─── FRESH START: clear all demo data; user begins with new projects ───
-rfqs=[];npds=[];bomParts=[];lineRows=[];reviews=[];momActions=[];pocs=[];ppap=[];trials=[];investments=[];npdBomRows=[];resources=[];budget=[];samples=[];stdDocs=[];ecns=[];
-rfqCounter=1;npdCounter=1;bomIdCtr=1;lineIdCtr=1;reviewCtr=1;actionCtr=1;pocCounter=1;invCtr=1;npbCtr=1;sampleCtr=1;stdDocCtr=1;ecnCtr=1;trialCtr=1;
+rfqs=[];npds=[];bomParts=[];lineRows=[];reviews=[];momActions=[];pocs=[];ppap=[];trials=[];investments=[];npdBomRows=[];resources=[];budget=[];samples=[];stdDocs=[];ecns=[];shopfloorIssues=[];
+rfqCounter=1;npdCounter=1;bomIdCtr=1;lineIdCtr=1;reviewCtr=1;actionCtr=1;pocCounter=1;invCtr=1;npbCtr=1;sampleCtr=1;stdDocCtr=1;ecnCtr=1;trialCtr=1;sfCtr=1;
 loadState();
 document.getElementById('bgwm').style.backgroundImage='url(data:image/jpeg;base64,'+TRIAL_LOGO_B64+')';
 gateApp();
