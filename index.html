@@ -1361,7 +1361,7 @@ function isTypingNow(){
 // etc.); everything else was modeled 1:1 off this same UI, per schema.js's own header comment.
 const SYNC_MODULES=[
  {key:'rfqs',path:'rfqs',cols:['code','name','cust','vol','price','bd','notes','stage','created','rd','src','bd2','npdCode'],rename:{id:'code',npd:'npdCode'}},
- {key:'npds',path:'npd-projects',cols:['code','name','cust','businessUnit','devType','customerModel','annualVol','rfqNo','owner','category','gate','koDone','koIso','startDate','launch','bom','risk','fromRfq','fromPoc','charter','team','tasks','gatePlan','gateOverride','gateExit','gateDeliv','gateDocs','npdRes','notifyLog'],rename:{id:'code',start:'startDate'}},
+ {key:'npds',path:'npd-projects',cols:['code','name','cust','businessUnit','devType','customerModel','annualVol','rfqNo','owner','category','gate','koDone','koIso','startDate','launch','bom','risk','fromRfq','fromPoc','charter','team','tasks','gatePlan','gateOverride','gateExit','gateDeliv','gateDocs','npdRes','notifyLog','customGates'],rename:{id:'code',start:'startDate'}},
  {key:'pocs',path:'poc-projects',cols:['code','name','cust','app','owner','reqDate','sampleBy','sampleQty','stage','koDone','koDate','created','skip','promotedTo','charter','parts','tasks','gateExit','gateDeliv'],rename:{id:'code'}},
  {key:'bomParts',path:'bom-parts',cols:['cat','proj','pno','desc','ost','qty','common','type','mechLead','sourcing','vd','commodity','mfgProcess','volumes','toolMaker','partMaker','fpaStatus','fpaNumber','cavity','tonnage','machineMake','cycleTime','ms']},
  {key:'lineRows',path:'line-rows',cols:['proj','process','bomPart','existing','readiness','machine','fixture','tools','gauge','cycleTime','capacity','supplier','remarks','ms']},
@@ -2395,8 +2395,66 @@ function gateTab(n){
     +'<div class="acnt">'+(incl?done:'–')+'</div><div style="flex:1"><div class="an">'+G.g+' · '+esc(G.name)+gBadge+'</div><div class="as">'+sub+'</div></div>'
     +right+'</div>'
     +'<div class="acc-b" style="display:'+((open&&incl)?'block':'none')+';padding:0">'+bodyInner+'</div></div>';
- }).join('');
+ }).join('')+customGateBlock(n);
 }
+// Ad-hoc gates an admin can add to a project once it's fully past AB-7 (in production) — for
+// things like post-launch reviews or field-issue follow-ups that don't fit the fixed AB-0..AB-7
+// template. Stored on the project itself (n.customGates), not the global GATES array, so it
+// never affects any other project.
+function customGateBlock(n){const admin=isAdmin();
+ const cg=(n.customGates||[]).map(g=>{
+  const rows=(g.tasks||[]).map(t=>{
+    const canR=canEditField(t.resp,'restricted');const roc=v=>'<span class="roc">'+esc(v==null?'':v)+'</span>';
+    return '<tr class="st-'+stKey(t.status,t.pct)+'">'
+     +'<td class="actcell">'+esc(t.name)+'</td>'
+     +'<td>'+(admin?('<select class="gpd gpr" onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'resp\',this.value)">'+ownerOpts(t.resp)+'</select>'):roc(t.resp))+'</td>'
+     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planStart||'')+'" onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'planStart\',this.value)">'):roc(t.planStart))+'</td>'
+     +'<td>'+(admin?('<input type="date" class="gpd gpdate" value="'+(t.planEnd||'')+'" onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'planEnd\',this.value)">'):roc(t.planEnd))+'</td>'
+     +'<td><input type="date" class="gpd gpdate" value="'+(t.actualStart||'')+'"'+(canR?'':' disabled')+' onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'actualStart\',this.value)"></td>'
+     +'<td><input type="date" class="gpd gpdate" value="'+(t.actualEnd||'')+'"'+(canR?'':' disabled')+' onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'actualEnd\',this.value)"></td>'
+     +'<td>'+(admin?('<select class="taskstatus stsel-'+stKey(t.status,t.pct)+'" onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'status\',this.value)">'+TASK_ST.map(o=>'<option'+(t.status===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'):roc(t.status))+'</td>'
+     +'<td>'+(canR?('<input class="gpd" style="width:160px" value="'+esc(t.remarks||'')+'" placeholder="—" onchange="setCustomTaskField(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\',\'remarks\',this.value)">'):roc(t.remarks))+'</td>'
+     +(admin?'<td><span class="lnk" style="color:var(--red)" onclick="delCustomGateTask(\''+n.id+'\',\''+g.id+'\',\''+t.n+'\')">✕</span></td>':'')
+     +'</tr>';
+  }).join('');
+  const done=(g.tasks||[]).filter(t=>t.status==='Completed').length;
+  return '<div class="acc"><div class="acc-h" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\'">'
+   +'<div class="acnt">'+done+'</div><div style="flex:1"><div class="an">'+esc(g.name)+' <span class="gbadge gb-c">Post-SOP</span></div><div class="as">'+done+'/'+(g.tasks||[]).length+' complete</div></div></div>'
+   +'<div class="acc-b" style="display:block;padding:0"><div class="tblwrap gate-scroll"><table class="tbl gatetbl gatetbl2" style="min-width:1100px"><thead><tr><th>Activity / Task</th><th>Responsibility</th><th>Plan Start</th><th>Plan End</th><th>Actual Start</th><th>Actual End</th><th>Status</th><th>Remarks</th>'+(admin?'<th></th>':'')+'</tr></thead><tbody>'+(rows||'<tr><td colspan="9" class="empty">No tasks yet.</td></tr>')+'</tbody></table></div>'
+   +(admin?'<div style="padding:10px 14px;border-top:1px solid var(--bd);display:flex;gap:8px"><button class="btn b-gho b-sm" onclick="addCustomGateTask(\''+n.id+'\',\''+g.id+'\')">'+svg(I.plus)+'Add Task</button><button class="btn b-gho b-sm" style="color:var(--red)" onclick="delCustomGate(\''+n.id+'\',\''+g.id+'\')">Remove Gate</button></div>':'')
+   +'</div></div>';
+ }).join('');
+ const addBtn=(admin&&npdInProduction(n))?'<div style="margin-top:12px"><button class="btn b-pri b-sm" onclick="addCustomGate(\''+n.id+'\')">'+svg(I.plus)+'Add Gate (post-SOP)</button></div>':'';
+ return cg+addBtn;
+}
+function addCustomGate(id){if(!isAdmin()){toast('Admins only');return;}
+ const n=npds.find(x=>x.id===id);if(!n)return;
+ if(!npdInProduction(n)){toast('This project needs to be in production (past AB-7) before adding a post-SOP gate');return;}
+ const name=(prompt('Name this gate (e.g. "Post-Launch Review", "Field Issue Tracking")')||'').trim();
+ if(!name)return;
+ if(!Array.isArray(n.customGates))n.customGates=[];
+ n.customGates.push({id:'cg'+Date.now(),name,tasks:[]});
+ saveState();render();toast('Gate added','success');}
+function delCustomGate(id,gid){if(!isAdmin()){toast('Admins only');return;}
+ const n=npds.find(x=>x.id===id);if(!n||!Array.isArray(n.customGates))return;
+ if(!confirm('Remove this gate and all its tasks?'))return;
+ n.customGates=n.customGates.filter(g=>g.id!==gid);saveState();render();}
+function addCustomGateTask(id,gid){if(!isAdmin()){toast('Admins only');return;}
+ const n=npds.find(x=>x.id===id);const g=n&&(n.customGates||[]).find(x=>x.id===gid);if(!g)return;
+ const name=(prompt('Task name')||'').trim();if(!name)return;
+ if(!Array.isArray(g.tasks))g.tasks=[];
+ g.tasks.push({n:'PS'+(g.tasks.length+1),name,resp:'',status:'Backlog',pct:0,planStart:'',planEnd:'',actualStart:'',actualEnd:'',remarks:''});
+ saveState();render();toast('Task added','success');}
+function delCustomGateTask(id,gid,tn){if(!isAdmin()){toast('Admins only');return;}
+ const n=npds.find(x=>x.id===id);const g=n&&(n.customGates||[]).find(x=>x.id===gid);if(!g)return;
+ g.tasks=(g.tasks||[]).filter(t=>String(t.n)!==String(tn));saveState();render();}
+function setCustomTaskField(id,gid,tn,field,val){
+ const n=npds.find(x=>x.id===id);const g=n&&(n.customGates||[]).find(x=>x.id===gid);if(!g)return;
+ const t=(g.tasks||[]).find(x=>String(x.n)===String(tn));if(!t)return;
+ const restricted=field==='actualStart'||field==='actualEnd'||field==='remarks';
+ if(!canEditField(t.resp,restricted?'restricted':'full')){toast('You can only update Actual dates and Remarks on your own tasks');render();return;}
+ if(field==='resp'&&val&&val!==t.resp)notifyAssigned(val,t.name,'NPD Post-SOP Task — '+n.name,n.name,t.planEnd);
+ t[field]=val;saveState();render();}
 function setTaskField(id,nn,field,val){const p=npds.find(x=>x.id===id);if(!p)return;const t=p.tasks.find(x=>String(x.n)===String(nn));if(!t)return;
  const restricted=field==='actualStart'||field==='actualEnd'||field==='remarks';
  if(!canEditField(t.resp,restricted?'restricted':'full')){toast('You can only update Actual dates and Remarks on your own tasks');render();return;}
@@ -5374,7 +5432,8 @@ function ecnImportRows(rows){if(!rows||!rows.length){toast('Empty file');return;
 const SF_STATUS=['Pending','In Process','On Track','Delayed','Closed'];
 function sfStBadge(s){const m={'Pending':['#475569','#e2e8f0'],'In Process':['#b45309','#fef3c7'],'On Track':['#047857','#d1fae5'],'Delayed':['#b91c1c','#fee2e2'],'Closed':['#1e40af','#dbeafe']}[s]||['#475569','#e2e8f0'];return '<span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;color:'+m[0]+';background:'+m[1]+';white-space:nowrap">'+esc(s||'Pending')+'</span>';}
 function sfStatusClass(s){s=(s||'').toLowerCase();if(s==='closed')return 'ecn-done';if(s==='on track')return 'ecn-appr';if(s==='delayed')return 'ecn-rej';if(s==='in process'||s==='pending')return 'ecn-pend';return '';}
-function sfCats(){const s=new Set();shopfloorIssues.forEach(x=>{if(x.cat)s.add(x.cat);});BU_OPTS.forEach(c=>s.add(c));return [...s];}
+function npdInProduction(p){return p.gate>GATES.length;} // fully past AB-7 — either walked through normally or created via the "already in production" fast-path
+function sfProjOpts(){const inProd=npds.filter(npdInProduction).map(p=>p.name);const s=new Set(inProd);shopfloorIssues.forEach(x=>{if(x.cat)s.add(x.cat);});return [...s];}
 function sfMatch(x){if(sfFilter&&x.cat!==sfFilter)return false;if(sfStatFilter&&x.status!==sfStatFilter)return false;if(sfSearch){return matchQ([x.station,x.problem,x.action,x.resp,x.remarks].join(' '),sfSearch);}return true;}
 function sfPhotosCell(x){const canR=canEditField(x.resp,'restricted');
  const chips=(x.files||[]).map((fl,fi)=>fl.id
@@ -5385,7 +5444,7 @@ function sfPhotosCell(x){const canR=canEditField(x.resp,'restricted');
 function viewShopfloor(){const admin=isAdmin();
  let list=shopfloorIssues.filter(sfMatch);
  const cats=[...new Set(shopfloorIssues.map(x=>x.cat).filter(Boolean))];
- const chips='<select class="fsel" onchange="sfFilter=this.value;render()"><option value=""'+(sfFilter===''?' selected':'')+'>All Categories ('+shopfloorIssues.length+')</option>'+cats.map(c=>'<option value="'+esc(c)+'"'+(sfFilter===c?' selected':'')+'>'+esc(c)+' ('+shopfloorIssues.filter(x=>x.cat===c).length+')</option>').join('')+'</select>';
+ const chips='<select class="fsel" onchange="sfFilter=this.value;render()"><option value=""'+(sfFilter===''?' selected':'')+'>All Projects ('+shopfloorIssues.length+')</option>'+cats.map(c=>'<option value="'+esc(c)+'"'+(sfFilter===c?' selected':'')+'>'+esc(c)+' ('+shopfloorIssues.filter(x=>x.cat===c).length+')</option>').join('')+'</select>';
  const rows=list.map((x,idx)=>{
    const canR=canEditField(x.resp,'restricted');
    const sc=sfStatusClass(x.status);
@@ -5394,8 +5453,10 @@ function viewShopfloor(){const admin=isAdmin();
    const resp=admin?'<select class="gx gxs" onchange="setSf('+x.id+',\'resp\',this.value)">'+ownerOpts(x.resp)+'</select>':'<span class="roc">'+esc(x.resp||'—')+'</span>';
    const st=canR?'<select class="gx gxs" onchange="setSf('+x.id+',\'status\',this.value)">'+SF_STATUS.map(s=>'<option'+(x.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>':sfStBadge(x.status);
    const rem=canR?'<textarea class="ecx" onchange="setSf('+x.id+',\'remarks\',this.value)">'+esc(x.remarks||'')+'</textarea>':'<span class="roc">'+esc(x.remarks||'—')+'</span>';
+   const proj=admin?'<select class="gx gxs" onchange="setSf('+x.id+',\'cat\',this.value)"><option value="">Select…</option>'+sfProjOpts().map(p=>'<option'+(x.cat===p?' selected':'')+'>'+esc(p)+'</option>').join('')+'</select>':'<span class="roc">'+esc(x.cat||'—')+'</span>';
    return '<tr class="'+sc+'">'
     +'<td class="mut" style="text-align:center">'+(idx+1)+'</td>'
+    +'<td style="min-width:150px">'+proj+'</td>'
     +'<td style="min-width:110px">'+tx('station')+'</td>'
     +'<td style="min-width:260px;max-width:340px">'+tx('problem')+'</td>'
     +'<td style="min-width:220px;max-width:300px">'+tx('action')+'</td>'
@@ -5406,8 +5467,8 @@ function viewShopfloor(){const admin=isAdmin();
     +'<td style="min-width:180px">'+rem+'</td>'
     +(admin?'<td style="text-align:right;white-space:nowrap"><button class="btn b-gho b-sm" style="color:var(--red)" onclick="delSfId('+x.id+')">Remove</button></td>':'')
     +'</tr>';}).join('');
- const head='<thead><tr><th>Sr. No</th><th>Station / Machine</th><th>Problem / Observation</th><th>Action Planned</th><th>Photos</th><th>Responsibility</th><th>Target Date</th><th>Status</th><th>Remarks</th>'+(admin?'<th style="text-align:right">Actions</th>':'')+'</tr></thead>';
- const table=shopfloorIssues.length?(list.length?'<div class="card"><div class="tblwrap"><table class="tbl" style="min-width:1500px">'+head+'<tbody>'+rows+'</tbody></table></div></div>':'<div class="card"><div class="card-b"><div class="empty" style="position:static">No issues match this filter.</div></div></div>')
+ const head='<thead><tr><th>Sr. No</th><th>Project Name</th><th>Station / Machine</th><th>Problem / Observation</th><th>Action Planned</th><th>Photos</th><th>Responsibility</th><th>Target Date</th><th>Status</th><th>Remarks</th>'+(admin?'<th style="text-align:right">Actions</th>':'')+'</tr></thead>';
+ const table=shopfloorIssues.length?(list.length?'<div class="card"><div class="tblwrap"><table class="tbl" style="min-width:1640px">'+head+'<tbody>'+rows+'</tbody></table></div></div>':'<div class="card"><div class="card-b"><div class="empty" style="position:static">No issues match this filter.</div></div></div>')
    :'<div class="card"><div class="card-b"><div class="empty" style="position:static">No shopfloor issues logged yet.<br><span style="font-size:11px">'+(isPM()?'Click <b>Add Issue</b> to log a line/station observation.':'Nothing has been logged yet.')+'</span></div></div></div>';
  return ''
  +'<div class="phead"><div><h1>Shopfloor Issue Tracker</h1><div class="sub">Line/station issues, observations &amp; corrective actions.</div></div>'
@@ -5430,7 +5491,7 @@ function editSf(i){sfModal(i);}
 function sfModal(i){const x=(i!=null)?shopfloorIssues[i]:{cat:'',station:'',problem:'',action:'',resp:'',targetDate:'',status:'Pending',remarks:''};
  const cl=v=>esc(v||'');
  modal('<div class="modal-h"><div class="mt">'+svg(I.warn)+(i!=null?'Edit Issue':'Add Shopfloor Issue')+'</div><div class="mx" onclick="closeModal()">×</div></div><div class="modal-b">'
- +'<div class="fg2"><div class="fl"><label>Business Unit</label><select id="sf-cat"><option value="">Select…</option>'+BU_OPTS.map(b=>'<option'+(x.cat===b?' selected':'')+'>'+b+'</option>').join('')+'</select></div>'
+ +'<div class="fg2"><div class="fl"><label>Project Name</label><select id="sf-cat"><option value="">Select…</option>'+sfProjOpts().map(p=>'<option'+(x.cat===p?' selected':'')+'>'+esc(p)+'</option>').join('')+'</select><div class="mut" style="font-size:10.5px;margin-top:3px">Only NPD projects already in production are listed</div></div>'
    +'<div class="fl"><label>Station / Machine</label><input id="sf-station" value="'+cl(x.station)+'" placeholder="e.g. All Stations"></div></div>'
  +'<div class="fl"><label>Problem / Observation</label><textarea id="sf-problem" rows="3" placeholder="What was observed">'+cl(x.problem)+'</textarea></div>'
  +'<div class="fl"><label>Action Planned</label><textarea id="sf-action" rows="2" placeholder="Corrective action">'+cl(x.action)+'</textarea></div>'
