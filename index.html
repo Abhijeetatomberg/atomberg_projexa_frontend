@@ -1981,7 +1981,7 @@ function portfolioGantt(){
  const today=new Date();today.setHours(0,0,0,0);const rows=[];
  if(ganttScope==='all'||ganttScope==='npd'){npds.forEach(p=>{initNpd(p);ensureTaskPlan(p);const sc=npdSchedule(p);
    if(sc){const segs=sc.gates.map(g=>({s:g.start,e:g.end,color:segColor(g.status),title:g.g+' '+g.name+' · '+g.pct+'%'}));
-     rows.push({name:p.name,sub:p.cust+' · '+GATE_LABELS[p.gate],start:sc.ko,end:sc.launch,pct:npdPct(p),health:npdHealth(p).status,segs,nav:"sub='"+p.id+"';route='npd';npdTab='gate';render()"});}
+     rows.push({name:p.name,sub:p.cust+' · '+npdGateLabel(p),start:sc.ko,end:sc.launch,pct:npdPct(p),health:npdHealth(p).status,segs,nav:"sub='"+p.id+"';route='npd';npdTab='gate';render()"});}
    else rows.push({name:p.name,sub:p.cust+' · KO pending',start:null,end:null,pct:0,health:'Pre-KO',segs:[],nav:"sub='"+p.id+"';route='npd';render()"});});}
  if(ganttScope==='all'||ganttScope==='poc'){pocs.filter(p=>!p.promotedTo).forEach(p=>{pocInit(p);const ts=pocActiveTasks(p).filter(t=>t.planStart&&t.planEnd);
    if(ts.length){const start=new Date(Math.min.apply(null,ts.map(t=>+new Date(t.planStart))));const end=new Date(Math.max.apply(null,ts.map(t=>+new Date(t.planEnd))));
@@ -2134,6 +2134,7 @@ function viewNpd(){
  +npdPortfolioViz()
  +'<div class="card"><div class="card-h"><div class="ct">'+svg(I.target)+'Filter by Gate</div></div><div class="card-b"><div class="chips">'
    +GATE_LABELS.map((g,i)=>{const c=npds.filter(n=>n.gate===i).length;return '<div class="chip'+(npdGateFilter===String(i)?' on':'')+'" onclick="npdGateFilter=npdGateFilter===\''+i+'\'?\'\':\''+i+'\';render()">'+g+'<span class="cnt">'+c+'</span></div>';}).join('')
+   +'<div class="chip'+(npdGateFilter==='prod'?' on':'')+'" onclick="npdGateFilter=npdGateFilter===\'prod\'?\'\':\'prod\';render()">Production<span class="cnt">'+npds.filter(npdInProduction).length+'</span></div>'
  +'</div></div></div>'
  +'<div class="toolbar"><div class="search">'+svg(I.search)+'<input placeholder="Search projects…" value="'+esc(npdSearch)+'" id="gsearch" oninput="npdSearch=this.value;render()"></div>'+sel2('npdSort','Sort: Default',NPD_SORTS,npdSort)+'</div>'
  +npdCards();
@@ -2165,9 +2166,10 @@ function npdPortfolioViz(){
   +tile({ico:'clock',color:(pendTasks?'#d97706':'#059669'),tint:(pendTasks?'#fef3c7':'#d1fae5'),val:pendTasks,lbl:'Pending Tasks'})
   +tile({ico:'chart',color:'#7c3aed',tint:'#ede9fe',val:avg+'%',lbl:'Avg Completion'})
  +'</div>';
- const gateDist=GATE_LABELS.map((g,i)=>npds.filter(n=>n.gate===i).length);
+ const gateDist=GATE_LABELS.map((g,i)=>npds.filter(n=>n.gate===i).length).concat([npds.filter(npdInProduction).length]);
+ const gateDistLabels=GATE_LABELS.concat(['Production']);
  const maxGateDist=Math.max(1,...gateDist);
- const gateBars=GATE_LABELS.map((g,i)=>'<div class="fpb"><div class="fpb-name">'+g+'</div><div class="fpb-bar"><span style="width:'+(gateDist[i]/maxGateDist*100)+'%;background:'+(i===GATE_LABELS.length-1?'#059669':'#2563eb')+'"></span></div><div class="fpb-meta">'+gateDist[i]+'</div></div>').join('');
+ const gateBars=gateDistLabels.map((g,i)=>'<div class="fpb"><div class="fpb-name">'+g+'</div><div class="fpb-bar"><span style="width:'+(gateDist[i]/maxGateDist*100)+'%;background:'+(i===gateDistLabels.length-1?'#059669':'#2563eb')+'"></span></div><div class="fpb-meta">'+gateDist[i]+'</div></div>').join('');
  const cols=['KO','AB-0','AB-1','AB-2','AB-3','AB-4','AB-5','AB-6','AB-7'];
  const cellColor=(p,i)=>{if(i===0)return p.koDone?'var(--green)':'#fcd34d';
    if(!p.koDone||!p.gatePlan)return '#e5e7eb';const st=p.gatePlan[i-1]?p.gatePlan[i-1].status:'Not Started';
@@ -2176,7 +2178,7 @@ function npdPortfolioViz(){
  const gmRows=H.map(function(x){const p=x.p,h=x.h;
    const cells=cols.map(function(c,i){const col=cellColor(p,i);const lbl=i===0?(p.koDone?'KO done':'KO pending'):((p.koDone&&p.gatePlan&&p.gatePlan[i-1])?p.gatePlan[i-1].status:'Upcoming');return '<div class="gm-cell" style="background:'+col+'" title="'+c+': '+lbl+'"></div>';}).join('');
    const chip=h.status==='Pre-KO'?'<span class="badge bg-amber">Pre-KO</span>':h.status==='On Track'?'<span class="badge bg-green">On Track</span>':h.status==='At Risk'?'<span class="badge bg-amber">At Risk</span>':'<span class="badge bg-red">Delayed</span>';
-   return '<div class="gm-row" onclick="openNpd(\''+p.id+'\')"><div class="gm-name"><b>'+esc(p.name)+'</b><span>'+p.id+' · '+GATE_LABELS[p.gate]+'</span></div>'+cells+'<div class="gm-meta">'+chip+'<span class="gm-pct">'+npdPct(p)+'%</span></div></div>';
+   return '<div class="gm-row" onclick="openNpd(\''+p.id+'\')"><div class="gm-name"><b>'+esc(p.name)+'</b><span>'+p.id+' · '+npdGateLabel(p)+'</span></div>'+cells+'<div class="gm-meta">'+chip+'<span class="gm-pct">'+npdPct(p)+'%</span></div></div>';
  }).join('');
  const legend='<div class="pipelegend" style="margin-top:12px;flex-wrap:wrap"><div class="lg"><span class="dot" style="background:var(--green)"></span>Completed</div><div class="lg"><span class="dot" style="background:#06b6d4"></span>Completed late</div><div class="lg"><span class="dot" style="background:var(--acc)"></span>In progress</div><div class="lg"><span class="dot" style="background:#f59e0b"></span>At risk</div><div class="lg"><span class="dot" style="background:var(--red)"></span>Delayed</div><div class="lg"><span class="dot" style="background:#e5e7eb"></span>Upcoming</div><div class="lg"><span class="dot" style="background:#fcd34d"></span>KO pending</div></div>';
  const gatemap='<div class="card"><div class="card-h"><div class="ct">'+svg(I.target)+'Portfolio Gate Map</div><span class="mut" style="font-size:11px">All projects across every gate — click a row to open</span></div><div class="card-b"><div class="gm">'+headRow+gmRows+'</div>'+legend+'</div></div>';
@@ -2198,13 +2200,13 @@ function npdPortfolioViz(){
  return kpis+collap('Charts &amp; analytics — NPD portfolio',row1+row2+gatemap,false);
 }
 function npdCards(){
- let list=npds.filter(n=>(npdGateFilter===''||n.gate===+npdGateFilter)&&(!npdSearch||matchQ(n.name+' '+n.id+' '+n.cust,npdSearch)));
- if(npdSort)list=list.slice().sort(NPD_SORT_FN[npdSort]);
+ let list=npds.filter(n=>(npdGateFilter===''||(npdGateFilter==='prod'?npdInProduction(n):n.gate===+npdGateFilter))&&(!npdSearch||matchQ(n.name+' '+n.id+' '+n.cust,npdSearch)));
+ list=list.slice().sort((a,b)=>{const ao=npdInProduction(a)?1:0,bo=npdInProduction(b)?1:0;if(ao!==bo)return ao-bo;return npdSort?NPD_SORT_FN[npdSort](a,b):0;}); // active projects always shown above production-complete ones
  if(!list.length)return '<div class="empty">No NPD projects match your filters. <span style="color:var(--acc);cursor:pointer" onclick="newNpd()">Create one →</span></div>';
  return '<div class="pcards">'+list.map(n=>{
-   const pct=npdPct(n);const gm=n.gate===0?'bg-amber':'bg-blue';const bp=npdBomParts(n).length;
+   const pct=npdPct(n);const gm=npdInProduction(n)?'bg-green':(n.gate===0?'bg-amber':'bg-blue');const bp=npdBomParts(n).length;
    return '<div class="pcard" onclick="openNpd(\''+n.id+'\')">'
-   +'<div class="pc-top"><span class="pc-id">'+n.id+'</span><span class="badge '+gm+'">'+GATE_LABELS[n.gate]+'</span></div>'
+   +'<div class="pc-top"><span class="pc-id">'+n.id+'</span><span class="badge '+gm+'">'+npdGateLabel(n)+'</span></div>'
    +'<div class="pc-name">'+esc(n.name)+'</div>'
    +'<div class="pc-meta"><span>'+esc(n.cust)+'</span><span>· '+esc(n.owner)+'</span></div>'
    +'<div class="pc-prog"><i style="width:'+pct+'%"></i></div>'
@@ -2225,7 +2227,7 @@ function viewNpdDetail(id){
  }).join('');
  const tabs=[['ov','Overview','doc'],['charter','Charter','doc'],['gate','Gate System','target'],['ppap','PPAP Docs','ppap'],['build','Build Lots','grid'],['timeline','Timeline','chart'],['tasks','Tasks','check'],['bom','BOM','box'],['line','Line Readiness','line'],['review','Reviews','cal'],['res','Resources','res'],['investment','Investment','budget'],['budget','Budget','budget']];
  let reviewBtn;
- if(n.gate>=8)reviewBtn='<span class="badge bg-green">In Production</span>';
+ if(npdInProduction(n))reviewBtn='<span class="badge bg-green">In Production</span>';
  else if(n.gate===0&&!charterComplete(n))reviewBtn='<button class="btn b-gho b-sm" title="Complete the charter to unlock" onclick="npdTab=\'charter\';render()">🔒 KO locked</button>';
  else reviewBtn='<button class="btn b-pri b-sm" onclick="gateReview(\''+id+'\')">'+(n.gate===0?'Conduct KO':'Advance to Next Phase')+' →</button>';
  const admin=isAdmin();
@@ -2243,7 +2245,7 @@ function viewNpdDetail(id){
    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">'
      +'<div style="display:flex;align-items:center;gap:14px">'+projImageBox('npd',n)+'<h1>'+esc(n.name)+'</h1></div>'
      +'<div style="display:flex;gap:10px;align-items:center">'
-       +'<span class="badge '+(n.gate===0?'bg-amber':'bg-blue')+'" style="font-size:12px">'+GATE_LABELS[n.gate]+'</span>'+reviewBtn
+       +'<span class="badge '+(npdInProduction(n)?'bg-green':(n.gate===0?'bg-amber':'bg-blue'))+'" style="font-size:12px">'+npdGateLabel(n)+'</span>'+reviewBtn
      +'</div>'
    +'</div>'
    +'<div class="dsub">'+n.id+(n.rfqNo?' · '+esc(n.rfqNo):'')+' · '+esc(n.cust)+' · '+esc(n.owner)+(n.category?' · <span class="catbadge">'+svg(I.target)+esc(n.category)+' · '+catGatesUsed(n)+' gates</span>':'')+'</div>'
@@ -2277,7 +2279,7 @@ function ovTab(n){
  const banner=n.gate===0?'<div class="wfbanner" style="background:linear-gradient(135deg,#92400e,#d97706);margin-bottom:16px"><div><p>Kickoff required</p><small>Complete the charter and conduct KO to start the gate system.</small></div><button class="btn b-gho b-sm" onclick="gateReview(\''+n.id+'\')">'+(!charterComplete(n)?'Go to Charter':'Conduct KO')+' →</button></div>':'';
  const pt=pendTaskList(n.tasks,"onclick=\"npdTab='gate';render()\"",6);
  const kpis='<div class="stats c6" style="margin-bottom:16px">'
-  +tile({ico:'target',color:(n.gate===0?'#d97706':'#2563eb'),tint:(n.gate===0?'#fef3c7':'#dbeafe'),val:GATE_LABELS[n.gate],cap:overall+'% overall',lbl:'Current Gate'})
+  +tile({ico:'target',color:(npdInProduction(n)?'#059669':n.gate===0?'#d97706':'#2563eb'),tint:(npdInProduction(n)?'#d1fae5':n.gate===0?'#fef3c7':'#dbeafe'),val:npdGateLabel(n),cap:overall+'% overall',lbl:'Current Gate'})
   +tile({ico:'trend',color:'#0891b2',tint:'#cffafe',val:overall+'%',lbl:'Overall Progress',barPct:overall,barColor:'#0891b2'})
   +tile({ico:'check',color:(pending?'#d97706':'#059669'),tint:(pending?'#fef3c7':'#d1fae5'),val:pending,cap:done+' of '+total+' done',lbl:'Pending Tasks'})
   +tile({ico:'warn',color:(b.delayed?'#dc2626':'#059669'),tint:(b.delayed?'#fee2e2':'#d1fae5'),val:b.delayed,cap:(b.atrisk?b.atrisk+' at risk':'on track'),lbl:'Delayed'})
@@ -2773,7 +2775,7 @@ function saveEditNpd(id){const n=npds.find(x=>x.id===id);const name=$('ep-name')
 function deleteNpd(id){const n=npds.find(x=>x.id===id);if(!confirm('Delete "'+n.name+'"? Cannot be undone.'))return;
  npds=npds.filter(x=>x.id!==id);sub=null;saveState();toast('Deleted','info');render();}
 function gateReview(id){const p=npds.find(x=>x.id===id);if(!p)return;initNpd(p);
- if(p.gate>=8){toast('Already at SOP');return;}
+ if(p.gate>GATES.length){toast('Already in production');return;}
  if(p.gate===0){if(!charterComplete(p)){toast('Complete the charter to unlock KO');npdTab='charter';render();return;}koModal(id);return;}
  const gi=p.gate-1;
  // exit-criteria & deliverables check for this gate (AB1–AB7 only — AB0 does not apply to NPD)
@@ -2782,12 +2784,12 @@ function gateReview(id){const p=npds.find(x=>x.id===id);if(!p)return;initNpd(p);
    const missing=gatesMissingFor(p,[gkey]);
    if(missing.length){gateBlockModal(missing,gkey+' ('+GATE_LABELS[p.gate]+')',"npdTab='gate';render()");return;}
  }
- const cur=GATE_LABELS[p.gate],next=GATE_LABELS[p.gate+1];
+ const cur=GATE_LABELS[p.gate],next=(p.gate+1>GATES.length)?'Production':GATE_LABELS[p.gate+1];
  if(!confirm('Close "'+cur+'" and advance to "'+next+'"? All tasks in '+cur+' will be marked Completed, and the team will be notified.'))return;
  p.tasks.filter(t=>t.gi===gi).forEach(t=>{t.status='Completed';if(!t.actualEnd)t.actualEnd=t.planEnd||'';if(!t.actualStart)t.actualStart=t.planStart||'';});
  if(p.gatePlan&&p.gatePlan[gi]){const gp=p.gatePlan[gi];gp.status='Completed';if(!gp.actualEnd)gp.actualEnd=gp.planEnd||isoOf(new Date());}
  p.gate++;saveState();render();
- notifyGateChange(p,cur,GATE_LABELS[p.gate]);}
+ notifyGateChange(p,cur,next);}
 function npdEmail(nm){return nm.toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'')+'@atomberg.com';}
 function npdRecipients(p){const t=(p.charter&&p.charter.team)?p.charter.team:{};
  const names=[...new Set([...(p.team||[]),...Object.values(t)].filter(Boolean))];
@@ -3557,7 +3559,7 @@ function reviewAutodraft(p){
  if(isPoc(p)){pocInit(p);const rec=p.parts.filter(x=>x.proc==='Received').length;const open=momActions.filter(a=>a.proj===p.name&&a.status!=='Done').length;
    return 'POC · <b>'+POC_STAGE_LABELS[p.stage]+'</b> ('+pocPct(p)+'%) · '+rec+'/'+p.parts.length+' proto parts received · '+open+' open action'+(open===1?'':'s');}
  const bp=npdBomParts(p);const slip=bp.filter(b=>bomSlip(b)>0).length;const lr=npdLineRows(p);const lrisk=lr.filter(l=>l.readiness==='At Risk'||l.readiness==='Delayed').length;const open=momActions.filter(a=>a.proj===p.name&&a.status!=='Done').length;
- const bits=['Gate <b>'+GATE_LABELS[p.gate]+'</b> ('+npdPct(p)+'%)'];
+ const bits=['Gate <b>'+npdGateLabel(p)+'</b> ('+npdPct(p)+'%)'];
  if(slip)bits.push('<span style="color:var(--red)">'+slip+' BOM part'+(slip>1?'s':'')+' slipping</span>');
  if(lrisk)bits.push('<span style="color:#d97706">'+lrisk+' line process'+(lrisk>1?'es':'')+' at risk</span>');
  bits.push(open+' open action'+(open===1?'':'s'));
@@ -3647,7 +3649,7 @@ function reviewMatrix(){
  const rs=reviews.slice().sort((a,b)=>a.date<b.date?1:-1);const cols=rs.slice(0,8);
  if(!cols.length)return '<div class="empty">No reviews yet. Click “New Review” to start logging.</div>';
  let head='<tr><th class="mtx-proj">Project</th>'+cols.map(r=>'<th>Weekly MOM · '+fmtNice(new Date(r.date))+'</th>').join('')+'</tr>';
- const rows=reviewProjectList().map(p=>{const type=isPoc(p)?'POC':((p.charter&&p.charter.type)||'NPD');
+ const rows=reviewProjectList().map(p=>{const type=isPoc(p)?'POC':(npdInProduction(p)?'Production':((p.charter&&p.charter.type)||'NPD'));
    let r='<tr><td class="mtx-proj"><div class="mtx-pn">'+esc(p.name)+'</div><div class="mtx-pc">'+esc(type)+' · '+esc(p.cust||'')+'</div></td>';
    r+=cols.map(rv=>{const note=(rv.notes&&rv.notes[p.name])||'';return '<td class="mtx-cell" onclick="reviewOpenId='+rv.id+';render()">'+(note?esc(note):'<span class="mtx-empty">—</span>')+'</td>';}).join('');
    return r+'</tr>';}).join('');
@@ -3691,7 +3693,7 @@ function delReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
 function reviewEditor(id){const r=reviews.find(x=>x.id===id);if(!r){reviewOpenId=null;return viewReviews();}
  const cards=reviewProjectList().map(p=>{const acts=momActions.filter(a=>a.reviewId===id&&a.proj===p.name);
    const prev=prevReviewNote(id,p.name);
-   const badge=isPoc(p)?'<span class="badge bg-purple">POC · '+POC_STAGE_LABELS[p.stage]+'</span>':'<span class="badge bg-blue">'+GATE_LABELS[p.gate]+'</span>';
+   const badge=isPoc(p)?'<span class="badge bg-purple">POC · '+POC_STAGE_LABELS[p.stage]+'</span>':'<span class="badge '+(npdInProduction(p)?'bg-green':'bg-blue')+'">'+npdGateLabel(p)+'</span>';
    const prevBlk=prev?'<div class="rev-prev"><div class="rev-prevh">↩ Last review · '+fmtNice(new Date(prev.date))+'</div><div class="rev-prevn">'+esc(prev.notes[p.name]).replace(/\n/g,'<br>')+'</div></div>':'';
    const aRows=acts.map(a=>'<div class="ra"><span class="ra-t">'+esc(a.text)+'</span><span class="ra-o">'+esc(a.owner||'—')+(a.due?' · '+fmtNice(new Date(a.due)):'')+'</span>'+actionBadge(a.status)+'<span style="color:var(--red);cursor:pointer;margin-left:6px" onclick="delAction('+a.id+')">✕</span></div>').join('');
    return '<div class="card" style="margin-bottom:12px"><div class="card-h"><div class="ct">'+esc(p.name)+'</div>'+badge+'</div><div class="card-b">'
@@ -3739,7 +3741,7 @@ function delAction(id){if(!confirm('Delete this action item?'))return;momActions
 function printReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
  let h='<h1>Weekly Review — '+fmtNice(new Date(r.date))+'</h1><p><b>Attendees:</b> '+esc(r.attendees||'—')+'</p>';
  npds.forEach(p=>{const note=(r.notes&&r.notes[p.name])||'';const acts=momActions.filter(a=>a.reviewId===id&&a.proj===p.name);if(!note&&!acts.length)return;
-   h+='<h2>'+esc(p.name)+' <span style="font-weight:400;font-size:13px">('+GATE_LABELS[p.gate]+')</span></h2>';
+   h+='<h2>'+esc(p.name)+' <span style="font-weight:400;font-size:13px">('+npdGateLabel(p)+')</span></h2>';
    if(note)h+='<p>'+esc(note).replace(/\n/g,'<br>')+'</p>';
    if(acts.length){h+='<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px"><tr style="background:#eee"><th align="left">Action</th><th>Owner</th><th>Due</th><th>Status</th></tr>'+acts.map(a=>'<tr><td>'+esc(a.text)+'</td><td align="center">'+esc(a.owner||'-')+'</td><td align="center">'+(a.due?fmtNice(new Date(a.due)):'-')+'</td><td align="center">'+a.status+'</td></tr>').join('')+'</table>';}
  });
@@ -3749,7 +3751,7 @@ function printReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
 function emailReview(id){const r=reviews.find(x=>x.id===id);if(!r)return;
  let body='Weekly Review — '+fmtNice(new Date(r.date))+'\nAttendees: '+(r.attendees||'-')+'\n';
  npds.forEach(p=>{const note=(r.notes&&r.notes[p.name])||'';const acts=momActions.filter(a=>a.reviewId===id&&a.proj===p.name);if(!note&&!acts.length)return;
-   body+='\n== '+p.name+' ('+GATE_LABELS[p.gate]+') ==\n';if(note)body+=note+'\n';acts.forEach(a=>{body+='  [ ] '+a.text+' — '+(a.owner||'-')+(a.due?' (due '+a.due+')':'')+' ['+a.status+']\n';});});
+   body+='\n== '+p.name+' ('+npdGateLabel(p)+') ==\n';if(note)body+=note+'\n';acts.forEach(a=>{body+='  [ ] '+a.text+' — '+(a.owner||'-')+(a.due?' (due '+a.due+')':'')+' ['+a.status+']\n';});});
  const mail='mailto:?subject='+encodeURIComponent('Weekly Review MOM — '+r.date)+'&body='+encodeURIComponent(body);
  window.location.href=mail;}
 function npdReviewTab(n){
@@ -5067,14 +5069,14 @@ function exportProjectExcel(kind,id){
  // ---------- 1. SUMMARY ----------
  (function(){const rows=[];const bars=[];const add=a=>{rows.push(a);return rows.length;};const merges=[];
   add([S(p.name+' — Project Summary',T)]);merges.push('A1:F1');
-  add([S(p.id+'  ·  '+(p.cust||'')+'  ·  '+(isPoc?'POC':(p.devType||'NPD'))+'  ·  exported '+new Date().toLocaleString(),LBL)]);merges.push('A2:F2');
+  add([S(p.id+'  ·  '+(p.cust||'')+'  ·  '+(isPoc?'POC':(npdInProduction(p)?'Production':(p.devType||'NPD')))+'  ·  exported '+new Date().toLocaleString(),LBL)]);merges.push('A2:F2');
   add([]);
   const tasks=p.tasks||[];const done=tasks.filter(t=>(t.pct!=null?+t.pct:0)>=100||t.status==='Completed').length;
   let exitMet=0,exitTot=0,delvRdy=0,delvTot=0;const keys=isPoc?['AB0','AB0.5']:GATES.map(g=>g.g.replace('-',''));
   keys.forEach(k=>{if(p.gateExit&&p.gateExit[k]){exitTot+=p.gateExit[k].length;exitMet+=p.gateExit[k].filter(e=>e.met).length;}if(p.gateDeliv&&p.gateDeliv[k]){delvTot+=p.gateDeliv[k].length;delvRdy+=p.gateDeliv[k].filter(d=>d.avail).length;}});
   const bomN=bomParts.filter(b=>b.proj===p.name).length;
   add([S('Overall progress',LBL),S('Stage / gate',LBL),S('Tasks',LBL),S('Tasks done',LBL),S('Exit met',LBL),S('Deliv. ready',LBL)]);
-  add([S((isPoc?pocPct(p):npdPct(p))+'%',KPI),S(isPoc?(POC_STAGE_LABELS[p.stage]||''):(GATE_LABELS[p.gate]||''),KPI),S(tasks.length,KPI),S(done,KPI),S(exitMet+'/'+exitTot,KPI),S(delvRdy+'/'+delvTot,KPI)]);
+  add([S((isPoc?pocPct(p):npdPct(p))+'%',KPI),S(isPoc?(POC_STAGE_LABELS[p.stage]||''):npdGateLabel(p),KPI),S(tasks.length,KPI),S(done,KPI),S(exitMet+'/'+exitTot,KPI),S(delvRdy+'/'+delvTot,KPI)]);
   add([]);
   // gate progress
   add([S(isPoc?'STAGE PROGRESS':'GATE PROGRESS',BAND)]);merges.push('A'+rows.length+':F'+rows.length);
@@ -5248,7 +5250,7 @@ function exportProjectFile(kind,id){
  const isPoc=kind==='poc';const now=new Date();const stamp=now.toLocaleString();
  let blocks='';
  // ---- meta ----
- const meta=[['Project ID',p.id],['Customer',p.cust],['Owner',p.owner],['Business Unit',p.businessUnit],['Type',isPoc?'POC':(p.devType||'NPD')],['Current '+(isPoc?'stage':'gate'),isPoc?(POC_STAGE_LABELS[p.stage]||''):(GATE_LABELS[p.gate]||'')],['Start',p.start],['Target launch',p.launch],['Overall progress',(isPoc?pocPct(p):npdPct(p))+'%']];
+ const meta=[['Project ID',p.id],['Customer',p.cust],['Owner',p.owner],['Business Unit',p.businessUnit],['Type',isPoc?'POC':(npdInProduction(p)?'Production':(p.devType||'NPD'))],['Current '+(isPoc?'stage':'gate'),isPoc?(POC_STAGE_LABELS[p.stage]||''):npdGateLabel(p)],['Start',p.start],['Target launch',p.launch],['Overall progress',(isPoc?pocPct(p):npdPct(p))+'%']];
  blocks+='<div class="meta">'+meta.filter(m=>m[1]!=null&&m[1]!=='').map(m=>'<div><span>'+_xe(m[0])+'</span><b>'+_xe(m[1])+'</b></div>').join('')+'</div>';
  // ---- gates / stages ----
  function exitRows(o,key){const l=(o.gateExit&&o.gateExit[key])||[];return l.map(e=>[e.t,(e.met?'Yes':'No'),e.owner,e.rem]);}
@@ -5433,6 +5435,8 @@ const SF_STATUS=['Pending','In Process','On Track','Delayed','Closed'];
 function sfStBadge(s){const m={'Pending':['#475569','#e2e8f0'],'In Process':['#b45309','#fef3c7'],'On Track':['#047857','#d1fae5'],'Delayed':['#b91c1c','#fee2e2'],'Closed':['#1e40af','#dbeafe']}[s]||['#475569','#e2e8f0'];return '<span style="font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;color:'+m[0]+';background:'+m[1]+';white-space:nowrap">'+esc(s||'Pending')+'</span>';}
 function sfStatusClass(s){s=(s||'').toLowerCase();if(s==='closed')return 'ecn-done';if(s==='on track')return 'ecn-appr';if(s==='delayed')return 'ecn-rej';if(s==='in process'||s==='pending')return 'ecn-pend';return '';}
 function npdInProduction(p){return p.gate>GATES.length;} // fully past AB-7 — either walked through normally or created via the "already in production" fast-path
+function npdGateLabel(p){return npdInProduction(p)?'Production':(GATE_LABELS[p.gate]||GATE_LABELS[0]);} // safe replacement for GATE_LABELS[p.gate] — that array has no entry past AB-7
+function projTypeLabel(p){return isPoc(p)?'POC':(npdInProduction(p)?'Production':'NPD');}
 function sfProjOpts(){const inProd=npds.filter(npdInProduction).map(p=>p.name);const s=new Set(inProd);shopfloorIssues.forEach(x=>{if(x.cat)s.add(x.cat);});return [...s];}
 function sfMatch(x){if(sfFilter&&x.cat!==sfFilter)return false;if(sfStatFilter&&x.status!==sfStatFilter)return false;if(sfSearch){return matchQ([x.station,x.problem,x.action,x.resp,x.remarks].join(' '),sfSearch);}return true;}
 function sfPhotosCell(x){const canR=canEditField(x.resp,'restricted');
