@@ -25,6 +25,7 @@
   --sh2:0 4px 12px rgba(16,24,40,.08);
 }
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;background:var(--bg);color:var(--t1);height:100vh;overflow:hidden}
+#bgwm{position:fixed;inset:0;z-index:0;pointer-events:none;background-repeat:no-repeat;background-position:center;background-size:min(38vw,380px);opacity:.05}
 .app{display:flex;height:100vh}
 
 /* ───── SIDEBAR ───── */
@@ -883,6 +884,7 @@ select.fsel:focus{outline:none;border-color:var(--acc)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="locked">
+<div id="bgwm"></div>
 <div id="login"><div class="lg-card">
   <div class="lg-logo"><div class="lg-badge">P</div><div><h2>Projexa</h2><p>Atomberg · Project Tracking Suite</p></div></div>
   <div class="lg-err" id="lg-err"></div>
@@ -5295,6 +5297,7 @@ function ecnImportRows(rows){if(!rows||!rows.length){toast('Empty file');return;
 rfqs=[];npds=[];bomParts=[];lineRows=[];reviews=[];momActions=[];pocs=[];ppap=[];trials=[];investments=[];npdBomRows=[];resources=[];budget=[];samples=[];stdDocs=[];ecns=[];
 rfqCounter=1;npdCounter=1;bomIdCtr=1;lineIdCtr=1;reviewCtr=1;actionCtr=1;pocCounter=1;invCtr=1;npbCtr=1;sampleCtr=1;stdDocCtr=1;ecnCtr=1;trialCtr=1;
 loadState();
+document.getElementById('bgwm').style.backgroundImage='url(data:image/jpeg;base64,'+TRIAL_LOGO_B64+')';
 gateApp();
 try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){} // local baseline only — do NOT push to DB yet
 loadFromDb();
