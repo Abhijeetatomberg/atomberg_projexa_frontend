@@ -1831,17 +1831,34 @@ function go(k){route=k;sub=null;render();}
 let UI_SCALE=parseInt(localStorage.getItem('projexa_uiscale'))||90;
 function applyUiScale(){const vw=document.getElementById('view');if(vw)vw.style.zoom=(UI_SCALE/100);const sel=document.getElementById('uiscale');if(sel)sel.value=String(UI_SCALE);}
 function setUiScale(v){UI_SCALE=parseInt(v)||100;try{localStorage.setItem('projexa_uiscale',UI_SCALE);}catch(e){}applyUiScale();}
-let _deepLinkApplied=false;
+let _lastSyncedHash='';
+// Reads the URL hash into route/sub — used for a shared/bookmarked link on first load and for
+// browser back/forward. Skips re-parsing a hash we just wrote ourselves (see syncHashFromRoute
+// below), so an in-memory route change (e.g. from clicking a sidebar item) isn't clobbered by
+// the stale hash before this render cycle gets a chance to persist it.
 function applyDeepLinkFromHash(){
- if(_deepLinkApplied)return;
  const h=location.hash||'';
- const m=h.match(/#trial=([^&]+)(?:&action=([^&]+))?/);
- if(!m)return;
- const tid=decodeURIComponent(m[1]);
- if(!trials.find(x=>x.id===tid))return; // not loaded yet (e.g. still waiting on DB) — try again next render
- _deepLinkApplied=true;
- route='trial';sub=tid;
- if(m[2]==='attach')setTimeout(()=>addTrialFile(tid),450);
+ if(h===_lastSyncedHash)return;
+ const legacy=h.match(/#trial=([^&]+)(?:&action=([^&]+))?/); // old emailed trial links — keep working
+ if(legacy){
+  const tid=decodeURIComponent(legacy[1]);
+  if(!trials.find(x=>x.id===tid))return; // not loaded yet (e.g. still waiting on DB) — try again next render
+  route='trial';sub=tid;
+  if(legacy[2]==='attach')setTimeout(()=>addTrialFile(tid),450);
+  return;
+ }
+ const m=h.match(/^#\/([a-z0-9_-]+)(?:\/(.+))?$/i);
+ if(m){route=m[1];sub=m[2]?decodeURIComponent(m[2]):null;}
+}
+// Keeps the address bar in sync with whatever route/sub the app is currently showing — makes
+// every module bookmarkable/shareable and survives refresh/back/forward. Uses replaceState (not
+// location.hash=) specifically because that does NOT fire our own hashchange listener, so this
+// can never trigger itself in a loop.
+function syncHashFromRoute(){
+ const h='#/'+route+(sub!=null?'/'+encodeURIComponent(sub):'');
+ if(h===location.hash)return;
+ _lastSyncedHash=h;
+ history.replaceState(null,'',h);
 }
 function render(){
  if(!CURRENT_USER){document.body.classList.add('locked');return;}
@@ -1876,6 +1893,7 @@ function render(){
  updateAiFabVisibility();
  if(keepFocus){const ns=$('gsearch');if(ns){ns.focus();try{ns.setSelectionRange(cpos[0],cpos[1]);}catch(e){}}}
  else $('view').scrollTop=0;
+ syncHashFromRoute();
 }
 
 // ════════════════════════════ STAT TILE ════════════════════════════
@@ -5550,7 +5568,7 @@ gateApp();
 try{localStorage.setItem(KEY,JSON.stringify(collectState()));}catch(e){} // local baseline only — do NOT push to DB yet
 loadFromDb();
 window.addEventListener('focus',function(){if(dbConnState!=='saving')loadFromDb(true).then(ok=>{if(ok)render();});});
-window.addEventListener('hashchange',function(){_deepLinkApplied=false;render();});
+window.addEventListener('hashchange',function(){render();});
 function runSplash(){
  var s=document.getElementById('splash');if(!s)return;
  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
