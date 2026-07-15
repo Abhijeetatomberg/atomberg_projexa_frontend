@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle2, XCircle, Lock } from 'lucide-react';
-import { Trials } from '@/api/resources';
+import {
+  ArrowLeft, Send, CheckCircle2, XCircle, Lock, Paperclip, Download, X, Loader2,
+} from 'lucide-react';
+import { Trials, uploadAttachment, attachmentUrl, deleteAttachment } from '@/api/resources';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,8 +32,10 @@ const requestFields = [
 const executionFields = [
   { key: 'machineSlot', label: 'Machine / Slot' },
   { key: 'slotAssignedDate', label: 'Slot Assigned Date', type: 'date' },
+  { key: 'area', label: 'Area / Machine / Line' },
   { key: 'trialStartDate', label: 'Trial Start', type: 'date' },
   { key: 'trialEndDate', label: 'Trial End', type: 'date' },
+  { key: 'duration', label: 'Trial Duration (period)' },
   { key: 'coordinator', label: 'Coordinator' },
   { key: 'storageLocation', label: 'Storage Location' },
   { key: 'feedback', label: 'Feedback / Results', type: 'textarea' },
@@ -40,8 +45,11 @@ const executionFields = [
 export default function TrialDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [t, setT] = useState(null);
   const [vals, setVals] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     Trials.get(id).then((r) => { setT(r); setVals(r); }).catch((e) => toast(e.message, 'error'));
@@ -60,6 +68,11 @@ export default function TrialDetailPage() {
 
   if (!t) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
+  const isOwner = t.originator && (t.originator === user?.name || t.originator === user?.username);
+  const ownerOrAdmin = isAdmin || isOwner;
+  // HOD sign-off can be tracked any time after submission by the owner/admin — it's
+  // recording the physical sign-off, so it isn't locked to a single status.
+  const hodEditable = ownerOrAdmin && t.status !== 'Draft' && t.status !== 'Closed';
   const allApproved = HOD_ROLES.every(([k]) => t.hod?.[k] === 'Approved');
 
   const setHod = async (k, decision) => {
@@ -71,14 +84,50 @@ export default function TrialDetailPage() {
   };
 
   const submit = async () => {
+    if (!vals.project || !vals.objective) {
+      toast('Fill in Project Name and Objective before submitting', 'error');
+      return;
+    }
     await patch({ ...vals, status: 'Submitted', submissionDate: todayIso() });
     toast('Trial submitted for HOD approvals', 'success');
   };
 
   const close = async () => {
-    if (!confirm('Close this trial?')) return;
+    if (!t.signedUploaded || !(t.files || []).length) {
+      toast('Upload the signed copy before closing this trial', 'error');
+      return;
+    }
+    if (!confirm(`Close "${t.trialNo}"? This marks the trial as fully complete.`)) return;
     await patch({ ...vals, status: 'Closed', closureDate: todayIso() });
     toast('Trial closed', 'success');
+  };
+
+  const attachFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const meta = await uploadAttachment(file, { module: 'trial', refId: t.id, uploadedBy: user?.name });
+      const files = [...(t.files || []), meta];
+      await patch({ files, signedUploaded: true });
+      toast('Signed copy attached', 'success');
+    } catch (err) {
+      toast(err.response?.data?.error || err.message, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = async (fileId) => {
+    try {
+      await deleteAttachment(fileId);
+      const files = (t.files || []).filter((f) => f.id !== fileId);
+      await patch({ files, signedUploaded: files.length > 0 });
+      toast('File removed', 'success');
+    } catch (err) {
+      toast(err.response?.data?.error || err.message, 'error');
+    }
   };
 
   return (
@@ -135,7 +184,7 @@ export default function TrialDetailPage() {
                   >
                     {st}
                   </Badge>
-                  {t.status === 'Submitted' && (
+                  {hodEditable && (
                     <>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" title="Approve" onClick={() => setHod(k, 'Approved')}>
                         <CheckCircle2 />
@@ -149,8 +198,54 @@ export default function TrialDetailPage() {
               );
             })}
             <p className="text-[11px] text-muted-foreground pt-1">
-              Approvals are enabled once the trial is submitted. All six sign-offs move it to “In Process”.
+              {ownerOrAdmin
+                ? 'Approvals are enabled once the trial is submitted. All six sign-offs move it to “In Process”.'
+                : `Only ${t.originator || 'the originator'} or an admin can record HOD sign-offs.`}
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center justify-between">
+              Signed Copy
+              {t.signedUploaded
+                ? <Badge className="bg-emerald-600">Uploaded</Badge>
+                : <Badge variant="outline">Not uploaded</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(t.files || []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">No signed copy attached yet.</p>
+            ) : (
+              <ul className="space-y-1">
+                {t.files.map((f) => (
+                  <li key={f.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-sm">
+                    <a
+                      href={attachmentUrl(f.id)} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1.5 truncate text-primary hover:underline" title={f.name}
+                    >
+                      <Download className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{f.name}</span>
+                    </a>
+                    {ownerOrAdmin && (
+                      <button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => removeFile(f.id)} title="Remove">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {ownerOrAdmin && (
+              <>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={attachFile} />
+                <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                  {uploading ? <Loader2 className="animate-spin" /> : <Paperclip />}
+                  {uploading ? 'Uploading…' : 'Attach signed copy'}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 

@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, CheckSquare, AlertTriangle, CalendarDays } from 'lucide-react';
 import { Reviews, MomActions, Npds } from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -15,7 +18,9 @@ import {
 import FormFields from '@/components/crud/FormFields';
 import { toast } from '@/components/toaster';
 import { ACTION_ST, badgeForStatus } from '@/lib/constants';
-import { fmtDate, todayIso } from '@/lib/utils';
+import { cn, fmtDate, todayIso } from '@/lib/utils';
+
+const ALL = '__all__';
 
 const actionFields = [
   { key: 'proj', label: 'Project' },
@@ -35,6 +40,9 @@ export default function ReviewPage() {
   const [actionDlg, setActionDlg] = useState(false);
   const [editingAction, setEditingAction] = useState(null);
   const [actionVals, setActionVals] = useState({});
+  const [filterProj, setFilterProj] = useState(ALL);
+  const [filterOwner, setFilterOwner] = useState(ALL);
+  const [filterStatus, setFilterStatus] = useState(ALL);
 
   const load = () => {
     Reviews.list().then(setReviews).catch((e) => toast(e.message, 'error'));
@@ -92,7 +100,31 @@ export default function ReviewPage() {
     }
   };
 
-  const openCount = actions.filter((a) => a.status !== 'Done').length;
+  const today = todayIso();
+  const openActions = actions.filter((a) => a.status !== 'Done');
+  const overdueActions = openActions.filter((a) => a.due && a.due < today);
+  const closedActions = actions.filter((a) => a.status === 'Done');
+  const openCount = openActions.length;
+
+  const projOptions = useMemo(() => [...new Set(actions.map((a) => a.proj).filter(Boolean))], [actions]);
+  const ownerOptions = useMemo(() => [...new Set(actions.map((a) => a.owner).filter(Boolean))], [actions]);
+
+  const filteredActions = useMemo(() => actions.filter((a) =>
+    (filterProj === ALL || a.proj === filterProj) &&
+    (filterOwner === ALL || a.owner === filterOwner) &&
+    (filterStatus === ALL || a.status === filterStatus)
+  ).sort((a, b) => (a.status === 'Done') - (b.status === 'Done') || ((a.due || '9') < (b.due || '9') ? -1 : 1)),
+  [actions, filterProj, filterOwner, filterStatus]);
+
+  // MOM Matrix — read across each project row to see what was discussed, review by review
+  const matrixCols = useMemo(() => [...reviews].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8), [reviews]);
+  const matrixProjects = useMemo(() => {
+    const names = npds.map((n) => n.name);
+    if (names.length) return names;
+    const set = new Set();
+    reviews.forEach((r) => Object.keys(r.notes || {}).forEach((k) => set.add(k)));
+    return [...set];
+  }, [npds, reviews]);
 
   return (
     <div className="space-y-4">
@@ -108,13 +140,107 @@ export default function ReviewPage() {
         <Button onClick={startReview}><Plus /> Start Review</Button>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><CheckSquare className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{openActions.length}</div><div className="text-xs text-muted-foreground mt-1">Open Actions</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={cn('h-10 w-10 rounded-lg grid place-items-center shrink-0', overdueActions.length ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600')}><AlertTriangle className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{overdueActions.length}</div><div className="text-xs text-muted-foreground mt-1">Overdue</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckSquare className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{closedActions.length}</div><div className="text-xs text-muted-foreground mt-1">Closed</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><CalendarDays className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{reviews.length}</div><div className="text-xs text-muted-foreground mt-1">Reviews Logged</div></div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="actions">
         <TabsList>
+          <TabsTrigger value="matrix">MOM Matrix</TabsTrigger>
           <TabsTrigger value="actions">Action Items ({openCount} open)</TabsTrigger>
           <TabsTrigger value="meetings">Meetings ({reviews.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="actions">
+        <TabsContent value="matrix" className="space-y-2">
+          <p className="text-xs text-muted-foreground">Read across each row to see what was discussed week by week · click any cell to open that review</p>
+          {!matrixCols.length ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No reviews yet. Click “Start Review” to begin logging.</p>
+          ) : (
+            <Card className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 bg-background">Project</TableHead>
+                    {matrixCols.map((r) => <TableHead key={r.id} className="whitespace-nowrap">Weekly MOM · {fmtDate(r.date)}</TableHead>)}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {matrixProjects.length === 0 ? (
+                    <TableRow><TableCell colSpan={matrixCols.length + 1} className="py-10 text-center text-muted-foreground">No NPD projects yet</TableCell></TableRow>
+                  ) : matrixProjects.map((p) => (
+                    <TableRow key={p}>
+                      <TableCell className="font-medium sticky left-0 bg-background whitespace-nowrap">{p}</TableCell>
+                      {matrixCols.map((r) => {
+                        const note = (r.notes && r.notes[p]) || '';
+                        return (
+                          <TableCell
+                            key={r.id}
+                            className="max-w-[240px] truncate cursor-pointer hover:bg-muted/50"
+                            title={note}
+                            onClick={() => openEditor(r)}
+                          >
+                            {note || <span className="text-muted-foreground">—</span>}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="actions" className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={filterProj} onValueChange={setFilterProj}>
+              <SelectTrigger className="w-48"><SelectValue placeholder="All Projects" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All Projects</SelectItem>
+                {projOptions.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="All Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All Status</SelectItem>
+                {ACTION_ST.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {ownerOptions.length > 0 && (
+              <Select value={filterOwner} onValueChange={setFilterOwner}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="All Owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All Owners</SelectItem>
+                  {ownerOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">Showing {filteredActions.length} of {actions.length}</span>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -127,18 +253,21 @@ export default function ReviewPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {actions.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No action items yet</TableCell></TableRow>
-              ) : actions.map((a) => (
-                <TableRow key={a.id} className="cursor-pointer" onClick={() => { setEditingAction(a); setActionVals(a); setActionDlg(true); }}>
-                  <TableCell>{a.proj || '—'}</TableCell>
-                  <TableCell className="max-w-md">{a.text}</TableCell>
-                  <TableCell>{a.owner || '—'}</TableCell>
-                  <TableCell>{fmtDate(a.raisedOn)}</TableCell>
-                  <TableCell>{fmtDate(a.due)}</TableCell>
-                  <TableCell><Badge variant="outline" className={badgeForStatus(a.status)}>{a.status}</Badge></TableCell>
-                </TableRow>
-              ))}
+              {filteredActions.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No action items match this filter</TableCell></TableRow>
+              ) : filteredActions.map((a) => {
+                const isOverdue = a.status !== 'Done' && a.due && a.due < today;
+                return (
+                  <TableRow key={a.id} className={cn('cursor-pointer', a.status === 'Done' && 'opacity-60')} onClick={() => { setEditingAction(a); setActionVals(a); setActionDlg(true); }}>
+                    <TableCell>{a.proj || '—'}</TableCell>
+                    <TableCell className="max-w-md">{a.text}</TableCell>
+                    <TableCell>{a.owner || '—'}</TableCell>
+                    <TableCell>{fmtDate(a.raisedOn)}</TableCell>
+                    <TableCell className={cn(isOverdue && 'text-red-600 font-semibold')}>{fmtDate(a.due)}{isOverdue ? ' ⚠' : ''}</TableCell>
+                    <TableCell><Badge variant="outline" className={badgeForStatus(a.status)}>{a.status}</Badge></TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TabsContent>

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Rocket, TrendingUp, GitBranch, Layers } from 'lucide-react';
 import { Pocs } from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -16,7 +17,7 @@ import FormFields from '@/components/crud/FormFields';
 import { toast } from '@/components/toaster';
 import { POC_STAGE_LABELS } from '@/lib/constants';
 import { pocPct } from '@/lib/poc';
-import { fmtDate } from '@/lib/utils';
+import { fmtDate, cn } from '@/lib/utils';
 
 const fields = [
   { key: 'name', label: 'POC Name', span: 2 },
@@ -33,6 +34,7 @@ export default function PocPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [stageFilter, setStageFilter] = useState(null);
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState({});
 
@@ -41,9 +43,18 @@ export default function PocPage() {
   }, []);
 
   const filtered = useMemo(
-    () => rows.filter((r) => !q || `${r.code} ${r.name} ${r.cust} ${r.owner}`.toLowerCase().includes(q.toLowerCase())),
-    [rows, q]
+    () => rows.filter((r) =>
+      (stageFilter == null || (r.stage || 0) === stageFilter) &&
+      (!q || `${r.code} ${r.name} ${r.cust} ${r.owner}`.toLowerCase().includes(q.toLowerCase()))
+    ),
+    [rows, q, stageFilter]
   );
+
+  const active = rows.filter((r) => !r.promotedTo);
+  const promoted = rows.filter((r) => r.promotedTo);
+  const avgPct = active.length ? Math.round(active.reduce((a, r) => a + pocPct(r), 0) / active.length) : 0;
+  const stageDist = POC_STAGE_LABELS.map((_, i) => active.filter((r) => (r.stage || 0) === i).length);
+  const maxStage = Math.max(1, ...stageDist);
 
   const create = async () => {
     if (!values.name?.trim()) { toast('POC name required', 'error'); return; }
@@ -71,6 +82,55 @@ export default function PocPage() {
         </div>
         <Button onClick={() => { setValues({}); setOpen(true); }}><Plus /> New POC</Button>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><Rocket className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total POCs</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><Layers className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{active.length}</div><div className="text-xs text-muted-foreground mt-1">Active POCs</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><GitBranch className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{promoted.length}</div><div className="text-xs text-muted-foreground mt-1">Promoted to NPD</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-cyan-100 text-cyan-600"><TrendingUp className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{avgPct}%</div><div className="text-xs text-muted-foreground mt-1">Avg. Progress (active)</div></div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><Rocket className="h-4 w-4 text-muted-foreground" />POCs by Stage</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {POC_STAGE_LABELS.map((lbl, i) => (
+            <div
+              key={lbl}
+              className={cn('flex items-center gap-2 text-xs cursor-pointer rounded px-1 -mx-1 py-0.5', stageFilter === i && 'bg-muted')}
+              onClick={() => setStageFilter(stageFilter === i ? null : i)}
+            >
+              <div className="w-28 truncate text-muted-foreground">{lbl}</div>
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${(stageDist[i] / maxStage) * 100}%`, background: i === POC_STAGE_LABELS.length - 1 ? '#059669' : '#7c3aed' }}
+                />
+              </div>
+              <div className="w-8 text-right font-medium">{stageDist[i]}</div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <Table>
         <TableHeader>

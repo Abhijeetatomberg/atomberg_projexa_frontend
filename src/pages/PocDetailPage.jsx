@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/toaster';
-import { POC_STAGE_LABELS, TASK_ST, badgeForStatus } from '@/lib/constants';
+import { POC_STAGE_LABELS, POC_SKIPPABLE, TASK_ST, badgeForStatus } from '@/lib/constants';
 import { buildPocTasks, pocStagePct, pocPct } from '@/lib/poc';
 import { cn, fmtDate, todayIso } from '@/lib/utils';
 
@@ -51,10 +51,18 @@ export default function PocDetailPage() {
 
   const advanceStage = async () => {
     if ((p.stage || 0) >= POC_STAGE_LABELS.length - 1) return;
-    const next = (p.stage || 0) + 1;
+    if (!confirm(`Complete "${POC_STAGE_LABELS[p.stage || 0]}" and advance to next phase? Tasks in this stage will be marked completed.`)) return;
+    let next = (p.stage || 0) + 1;
+    // Skip over any stage the team has marked "not required", mirroring pocAdvance in the legacy app
+    while (next < POC_STAGE_LABELS.length - 1 && p.skip?.[next]) next++;
     await patch({ stage: next });
     setStageView(next);
     toast(`Moved to ${POC_STAGE_LABELS[next]}`, 'success');
+  };
+
+  const setSkip = async (si, checked) => {
+    await patch({ skip: { ...(p.skip || {}), [si]: checked } });
+    toast(checked ? `${POC_STAGE_LABELS[si]} marked not required` : `${POC_STAGE_LABELS[si]} re-enabled`, 'success');
   };
 
   // Hands the POC over to NPD, mirroring promoteToNpd in the original app
@@ -104,13 +112,14 @@ export default function PocDetailPage() {
         </div>
         {!p.koDone ? (
           <Button onClick={conductKo}><Rocket /> Conduct KO</Button>
+        ) : p.promotedTo ? (
+          <Badge variant="outline">→ {p.promotedTo}</Badge>
+        ) : (p.stage || 0) < POC_STAGE_LABELS.length - 1 ? (
+          <Button variant="outline" onClick={advanceStage}>
+            {(p.stage || 0) === 0 ? 'Complete KO' : 'Advance to Next Phase'} <ArrowRight />
+          </Button>
         ) : (
-          <>
-            {(p.stage || 0) < POC_STAGE_LABELS.length - 1 && (
-              <Button variant="outline" onClick={advanceStage}>Next Stage <ArrowRight /></Button>
-            )}
-            {!p.promotedTo && <Button onClick={promote}><GitBranch /> Promote to NPD</Button>}
-          </>
+          <Button onClick={promote}><GitBranch /> Promote to NPD</Button>
         )}
       </div>
 
@@ -127,7 +136,23 @@ export default function PocDetailPage() {
               <CardContent className="p-3 text-center space-y-1.5">
                 <div className={cn('text-xs font-semibold', active && 'text-primary')}>{lbl}</div>
                 <Progress value={sp} className="h-1.5" />
-                <div className="text-[11px] text-muted-foreground">{sp}%{active ? ' · current' : ''}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {p.skip?.[si] ? 'skipped' : `${sp}%${active ? ' · current' : ''}`}
+                </div>
+                {POC_SKIPPABLE[si] && (
+                  <label
+                    className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-3 w-3"
+                      checked={!!p.skip?.[si]}
+                      onChange={(e) => setSkip(si, e.target.checked)}
+                    />
+                    Not required
+                  </label>
+                )}
               </CardContent>
             </Card>
           );

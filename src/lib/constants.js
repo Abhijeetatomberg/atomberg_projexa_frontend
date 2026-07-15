@@ -29,6 +29,8 @@ export const NPD_CATS = [
 ];
 
 export const POC_STAGE_LABELS = ['POC KO', 'Alpha Build', 'Beta Build', 'Beta 2 Build', 'Customer Approval'];
+// Stages that can be marked "not required" and skipped over — mirrors POC_SKIPPABLE in the legacy app
+export const POC_SKIPPABLE = { 2: true, 3: true };
 
 export const TASK_ST = ['Not Started', 'On Track', 'Behind Schedule', 'Delayed', 'At Risk', 'Completed', 'Completed After Delay'];
 export const ACTION_ST = ['Open', 'In Progress', 'Done', 'Blocked'];

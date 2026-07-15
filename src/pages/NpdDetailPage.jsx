@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import FormFields from '@/components/crud/FormFields';
 import { toast } from '@/components/toaster';
-import { GATES, GATE_LABELS, NPD_CATS, BUNITS, TASK_ST, badgeForStatus } from '@/lib/constants';
+import { GATES, GATE_LABELS, NPD_CATS, BUNITS, DEV_TYPES, TASK_ST, badgeForStatus } from '@/lib/constants';
 import {
   buildTaskPlan, recalcChain, seedGateLists, npdGatePct, npdPct, gateIncluded, gateKey, gateApplic, npdHealth,
 } from '@/lib/npd';
@@ -42,6 +42,7 @@ const infoFields = [
   { key: 'name', label: 'Project Name', span: 2 },
   { key: 'cust', label: 'Customer' },
   { key: 'businessUnit', label: 'Business Unit', type: 'select', options: BUNITS },
+  { key: 'devType', label: 'Development Type', type: 'select', options: DEV_TYPES },
   { key: 'category', label: 'NPD Category', type: 'select', options: NPD_CATS.map((c) => ({ value: c.c, label: `${c.c} — ${c.d}` })) },
   { key: 'customerModel', label: 'Customer Model' },
   { key: 'annualVol', label: 'Annual Volumes' },
@@ -130,7 +131,8 @@ export default function NpdDetailPage() {
             <Badge style={{ background: `${health.color}18`, color: health.color }} variant="outline">{health.status}</Badge>
           </h1>
           <p className="text-sm text-muted-foreground">
-            {p.cust || 'No customer'} · {p.businessUnit || '—'} · {p.category || 'No category'} · Owner {p.owner}
+            {p.code} · {p.cust || 'No customer'} · {p.businessUnit || '—'} · {p.devType || 'NPD'}
+            {p.category && <> · <Badge variant="secondary" className="text-[10px] align-middle">{p.category}</Badge></>} · Owner {p.owner}
           </p>
         </div>
         <div className="flex-1" />
@@ -191,12 +193,12 @@ export default function NpdDetailPage() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center justify-between">
                       <span>{G.g} — {G.name}</span>
-                      {applic === 'C' && (
+                      {p.category && (applic === 'C' || applic === 'NA') && (
                         <button
                           className="text-[10px] underline text-muted-foreground"
                           onClick={() => setGateOverride(gk, !included)}
                         >
-                          {included ? 'exclude' : 'include'}
+                          {included ? (applic === 'NA' ? 'exclude' : 'skip this gate') : (applic === 'NA' ? 'include anyway' : 'include')}
                         </button>
                       )}
                     </CardTitle>

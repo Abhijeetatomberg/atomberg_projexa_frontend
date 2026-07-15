@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, ArrowRight, ThumbsDown, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  Plus, ArrowRight, ThumbsDown, Search, BarChart3, FileText, TrendingUp, Trophy, Wallet,
+} from 'lucide-react';
 import { Rfqs, Npds } from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -20,6 +26,15 @@ const stageMeta = (k) => RFQ_STAGES.find((s) => s.k === k) || RFQ_STAGES[0];
 // The pipeline order used for "advance to next stage"
 const FLOW = ['draft', 'rd', 'costing', 'bd', 'won'];
 
+const SORTS = [
+  { k: 'newest', label: 'Newest First', fn: (a, b) => (b.created || '').localeCompare(a.created || '') },
+  { k: 'oldest', label: 'Oldest First', fn: (a, b) => (a.created || '').localeCompare(b.created || '') },
+  { k: 'cust', label: 'Customer (A-Z)', fn: (a, b) => (a.cust || '').localeCompare(b.cust || '') },
+  { k: 'vol', label: 'Volume (High-Low)', fn: (a, b) => (Number(b.vol) || 0) - (Number(a.vol) || 0) },
+  { k: 'price', label: 'Target Price (High-Low)', fn: (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0) },
+  { k: 'stage', label: 'Stage', fn: (a, b) => (a.stage || '').localeCompare(b.stage || '') },
+];
+
 const fields = [
   { key: 'name', label: 'RFQ Name', span: 2 },
   { key: 'cust', label: 'Customer' },
@@ -34,6 +49,7 @@ export default function RfqPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [stageFilter, setStageFilter] = useState('');
+  const [sort, setSort] = useState('newest');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [values, setValues] = useState({});
@@ -48,8 +64,8 @@ export default function RfqPage() {
     () => rows.filter((r) =>
       (!stageFilter || r.stage === stageFilter) &&
       (!q || `${r.code} ${r.name} ${r.cust} ${r.bd}`.toLowerCase().includes(q.toLowerCase()))
-    ),
-    [rows, q, stageFilter]
+    ).sort((SORTS.find((s) => s.k === sort) || SORTS[0]).fn),
+    [rows, q, stageFilter, sort]
   );
 
   const counts = useMemo(() => {
@@ -57,6 +73,18 @@ export default function RfqPage() {
     rows.forEach((r) => { c[r.stage] = (c[r.stage] || 0) + 1; });
     return c;
   }, [rows]);
+
+  const open_ = rows.filter((r) => !['won', 'lost'].includes(r.stage));
+  const won = rows.filter((r) => r.stage === 'won').length;
+  const lost = rows.filter((r) => r.stage === 'lost').length;
+  const winRate = won + lost ? Math.round((won / (won + lost)) * 100) : 0;
+  const pipeValue = open_.reduce((a, r) => a + (Number(r.vol) || 0) * (Number(r.price) || 0), 0);
+  const pipeSegs = [
+    { label: 'In Progress', color: '#2563eb', count: rows.filter((r) => ['draft', 'rd', 'costing'].includes(r.stage)).length },
+    { label: 'BD Pricing', color: '#d97706', count: rows.filter((r) => r.stage === 'bd').length },
+    { label: 'Won', color: '#059669', count: won },
+    { label: 'Lost', color: '#dc2626', count: lost },
+  ];
 
   const save = async () => {
     try {
@@ -114,17 +142,60 @@ export default function RfqPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-xl font-bold">RFQ Tracking</h1>
-          <p className="text-sm text-muted-foreground">Sales RFQs through feasibility, costing & pricing</p>
+          <p className="text-sm text-muted-foreground">Manage customer quotations and pipeline</p>
         </div>
         <div className="flex-1" />
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8 w-56" placeholder="Search RFQs…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
+        <Button variant="outline" asChild><Link to="/dashboard"><BarChart3 /> Analytics</Link></Button>
         <Button onClick={() => { setEditing(null); setValues({}); setOpen(true); }}>
           <Plus /> New RFQ
         </Button>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><FileText className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total RFQs</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><TrendingUp className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{open_.length}</div><div className="text-xs text-muted-foreground mt-1">Active Pipeline</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><Trophy className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{winRate}%</div><div className="text-xs text-muted-foreground mt-1">Win Rate</div><div className="text-[11px] text-muted-foreground">{won} won / {lost} lost</div></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-pink-100 text-pink-600"><Wallet className="h-5 w-5" /></div>
+            <div><div className="text-2xl font-bold leading-none">{inr(pipeValue)}</div><div className="text-xs text-muted-foreground mt-1">Pipeline Value</div></div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><TrendingUp className="h-4 w-4 text-muted-foreground" />Pipeline Distribution</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex h-2.5 rounded-full overflow-hidden bg-muted mb-3">
+            {pipeSegs.map((s) => s.count > 0 && (
+              <span key={s.label} style={{ width: `${(s.count / Math.max(1, rows.length)) * 100}%`, background: s.color }} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            {pipeSegs.map((s) => (
+              <div key={s.label} className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full inline-block" style={{ background: s.color }} />
+                {s.label}: <b>{s.count}</b>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {RFQ_STAGES.map((s) => (
@@ -139,6 +210,22 @@ export default function RfqPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8 w-64" placeholder="Search RFQs by number or title…" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SORTS.map((s) => <SelectItem key={s.k} value={s.k}>Sort: {s.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground ml-auto">
+          Showing <span className="font-bold text-foreground">{filtered.length}</span> of {rows.length} RFQs
+        </div>
       </div>
 
       <Table>

@@ -28,6 +28,13 @@ export const initials = (name = '') =>
 export const inr = (n) =>
   '₹' + (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
+// Compact ₹ lakh/crore formatter for dashboard tiles, e.g. 1250000 → "₹12.5L"
+export const lakh = (n) => {
+  const v = Number(n) || 0;
+  if (Math.abs(v) >= 1e7) return `₹${(v / 1e7).toFixed(1)}Cr`;
+  return `₹${(v / 1e5).toFixed(1)}L`;
+};
+
 // Task status → bucket, mirroring stKey() in the original app
 export const taskBucket = (status = '', pct = null) => {
   if (status.startsWith('Completed')) return 'done';

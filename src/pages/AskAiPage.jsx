@@ -45,9 +45,15 @@ export default function AskAiPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl mx-auto">
-      <div className="mb-3">
-        <h1 className="text-xl font-bold flex items-center gap-2"><Sparkles className="h-5 w-5 text-rose-600" /> Ask AI</h1>
-        <p className="text-sm text-muted-foreground">Ask plain-English questions about your live Projexa data.</p>
+      <div className="mb-3 flex items-center gap-3">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2"><Sparkles className="h-5 w-5 text-rose-600" /> Ask AI</h1>
+          <p className="text-sm text-muted-foreground">Ask questions about everything in Projexa — overdue items, project status, who owns what, budget vs. actuals — answered from your live data.</p>
+        </div>
+        <div className="flex-1" />
+        {chat.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => setChat([])}>Clear conversation</Button>
+        )}
       </div>
 
       <Card className="flex-1 flex flex-col overflow-hidden">

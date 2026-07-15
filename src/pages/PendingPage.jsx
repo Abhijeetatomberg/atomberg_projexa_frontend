@@ -1,26 +1,46 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
-import { Npds, Pocs, MomActions, Samples, PpapDocs } from '@/api/resources';
+import { Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Npds, Pocs, MomActions, Samples, PpapDocs, Users } from '@/api/resources';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { badgeForStatus } from '@/lib/constants';
 import { cn, fmtDate, taskBucket, todayIso } from '@/lib/utils';
 
+const ALL = '__all__';
+
+function SortTh({ label, k, sortKey, sortDir, onSort }) {
+  const active = sortKey === k;
+  const Icon = active ? (sortDir === 1 ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => onSort(k)}>
+      <span className="inline-flex items-center gap-1">{label}<Icon className={cn('h-3 w-3', active ? 'text-primary' : 'text-muted-foreground')} /></span>
+    </TableHead>
+  );
+}
+
 // Cross-module "everything still open" tracker, mirroring the Pending Tasks
 // view in the original app: NPD tasks + POC tasks + MOM actions + samples + PPAP.
 export default function PendingPage() {
   const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [srcFilter, setSrcFilter] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState(ALL);
+  const [deptFilter, setDeptFilter] = useState(ALL);
+  const [sortKey, setSortKey] = useState('planEnd');
+  const [sortDir, setSortDir] = useState(1);
 
   useEffect(() => {
-    Promise.allSettled([Npds.list(), Pocs.list(), MomActions.list(), Samples.list(), PpapDocs.list()])
-      .then(([npds, pocs, actions, samples, ppap]) => {
+    Promise.allSettled([Npds.list(), Pocs.list(), MomActions.list(), Samples.list(), PpapDocs.list(), Users.list()])
+      .then(([npds, pocs, actions, samples, ppap, us]) => {
         const out = [];
         (npds.value || []).forEach((p) => (p.tasks || []).forEach((t) => {
           if (taskBucket(t.status, t.pct) !== 'done') {
@@ -46,19 +66,40 @@ export default function PendingPage() {
         });
         out.sort((a, b) => (a.planEnd || '9999') < (b.planEnd || '9999') ? -1 : 1);
         setItems(out);
+        setUsers(us.value || []);
       })
       .finally(() => setLoading(false));
   }, []);
 
   const today = todayIso();
+  const deptOf = (owner) => {
+    if (!owner) return 'Unassigned';
+    const u = users.find((x) => x.name === owner);
+    return (u && u.dept) || 'Other';
+  };
+
+  const owners = useMemo(() => [...new Set(items.map((it) => it.owner).filter(Boolean))].sort(), [items]);
+  const depts = useMemo(() => [...new Set(items.map((it) => deptOf(it.owner)))].sort(), [items, users]);
+
+  const onSort = (k) => {
+    if (sortKey === k) setSortDir((d) => -d);
+    else { setSortKey(k); setSortDir(1); }
+  };
+
   const filtered = useMemo(
     () => items.filter((it) =>
       (!srcFilter || it.src === srcFilter) &&
+      (ownerFilter === ALL || it.owner === ownerFilter) &&
+      (deptFilter === ALL || deptOf(it.owner) === deptFilter) &&
       (!q || `${it.proj} ${it.task} ${it.owner}`.toLowerCase().includes(q.toLowerCase()))
-    ),
-    [items, q, srcFilter]
+    ).sort((a, b) => {
+      const av = a[sortKey] || '', bv = b[sortKey] || '';
+      return av.toString().toLowerCase().localeCompare(bv.toString().toLowerCase()) * sortDir;
+    }),
+    [items, q, srcFilter, ownerFilter, deptFilter, users, sortKey, sortDir]
   );
   const overdue = items.filter((it) => it.planEnd && it.planEnd < today).length;
+  const unassigned = items.filter((it) => !it.owner).length;
   const sources = ['NPD', 'POC', 'Action', 'Sample', 'PPAP'];
 
   return (
@@ -75,7 +116,7 @@ export default function PendingPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-8 gap-3">
         <Card className={cn('cursor-pointer', srcFilter === '' && 'ring-2 ring-primary')} onClick={() => setSrcFilter('')}>
           <CardContent className="p-3 text-center">
             <div className="text-2xl font-bold">{items.length}</div>
@@ -88,6 +129,12 @@ export default function PendingPage() {
             <div className="text-xs text-muted-foreground">Overdue</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-2xl font-bold text-amber-600">{unassigned}</div>
+            <div className="text-xs text-muted-foreground">Unassigned</div>
+          </CardContent>
+        </Card>
         {sources.map((s) => (
           <Card key={s} className={cn('cursor-pointer', srcFilter === s && 'ring-2 ring-primary')} onClick={() => setSrcFilter(srcFilter === s ? '' : s)}>
             <CardContent className="p-3 text-center">
@@ -98,15 +145,33 @@ export default function PendingPage() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="All Owners" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All Owners</SelectItem>
+            {owners.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={deptFilter} onValueChange={setDeptFilter}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="All Departments" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All Departments</SelectItem>
+            {depts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground ml-auto">Showing {filtered.length} of {items.length}</span>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Source</TableHead>
-            <TableHead>Project</TableHead>
+            <SortTh label="Source" k="src" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh label="Project" k="proj" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
             <TableHead>Task</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Plan End</TableHead>
-            <TableHead>Status</TableHead>
+            <SortTh label="Owner" k="owner" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh label="Plan End" k="planEnd" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+            <SortTh label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
           </TableRow>
         </TableHeader>
         <TableBody>
