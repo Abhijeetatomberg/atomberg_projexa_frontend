@@ -26,16 +26,38 @@ import {
   buildTaskPlan, recalcChain, seedGateLists, npdGatePct, npdPct, gateIncluded, gateKey, gateApplic, npdHealth,
 } from '@/lib/npd';
 import { fmtDate, todayIso, cn } from '@/lib/utils';
+import OverviewTab from './npd/OverviewTab';
+import BuildLotsTab from './npd/BuildLotsTab';
+import TimelineTab from './npd/TimelineTab';
+import BomTab from './npd/BomTab';
+import LineTab from './npd/LineTab';
+import ReviewsTab from './npd/ReviewsTab';
+import ResourcesTab from './npd/ResourcesTab';
+import InvestmentTab from './npd/InvestmentTab';
+import BudgetTab from './npd/BudgetTab';
+import PpapTab from './npd/PpapTab';
 
 const CHARTER_FIELDS = [
   ['objective', 'Project Objectives'],
   ['scope', 'Project Scope'],
   ['customerReq', 'Customer Requirements'],
 ];
+const CHARTER_FIELDS_OPTIONAL = [
+  ['businessCase', 'Business Case'],
+  ['budgetOverview', 'Budget Overview'],
+  ['keyRisks', 'Key Risks & Mitigation'],
+];
 const CHARTER_TEAM = [
   ['pm', 'Project Manager'],
   ['electrical', 'Electrical Lead'],
   ['mechanical', 'Mechanical Lead'],
+];
+const CHARTER_TEAM_OPTIONAL = [
+  ['sourcing', 'Sourcing'],
+  ['vendorDev', 'Vendor Development'],
+  ['ped', 'PED'],
+  ['production', 'Production'],
+  ['quality', 'Plant Quality'],
 ];
 
 const infoFields = [
@@ -60,6 +82,8 @@ export default function NpdDetailPage() {
   const [infoVals, setInfoVals] = useState({});
   const [taskDlg, setTaskDlg] = useState(null); // task being edited (index into tasks)
   const [taskVals, setTaskVals] = useState({});
+  const [koOpen, setKoOpen] = useState(false);
+  const [koDate, setKoDate] = useState(todayIso());
 
   useEffect(() => {
     Npds.get(id).then((r) => { setP(r); setCharter(r.charter || {}); }).catch((e) => toast(e.message, 'error'));
@@ -80,13 +104,19 @@ export default function NpdDetailPage() {
     [charter]
   );
 
-  // "Conduct KO": generates the full AB-0..AB-7 task plan chained from today
+  // "Conduct KO": generates the full AB-0..AB-7 task plan chained from the chosen kick-off date
   const conductKo = async () => {
     if (!charterComplete) { toast('Complete the charter first (objectives, scope, requirements & core team)', 'error'); return; }
-    const ko = todayIso();
+    setKoDate(todayIso());
+    setKoOpen(true);
+  };
+
+  const confirmKo = async () => {
+    const ko = koDate || todayIso();
     const tasks = recalcChain(buildTaskPlan(), ko);
     const lists = seedGateLists(p);
-    await patch({ koDone: true, koIso: ko, gate: 1, tasks, ...lists });
+    await patch({ koDone: true, koIso: ko, startDate: ko, gate: 1, tasks, ...lists });
+    setKoOpen(false);
     toast('Kick-off done — task plan generated', 'success');
   };
 
@@ -144,13 +174,26 @@ export default function NpdDetailPage() {
         {!p.koDone && <Button onClick={conductKo}><Rocket /> Conduct KO</Button>}
       </div>
 
-      <Tabs defaultValue={p.koDone ? 'gates' : 'charter'}>
-        <TabsList>
+      <Tabs defaultValue={p.koDone ? 'overview' : 'charter'}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="charter">Charter</TabsTrigger>
-          <TabsTrigger value="gates">Gates</TabsTrigger>
+          <TabsTrigger value="gates">Gate System</TabsTrigger>
+          <TabsTrigger value="ppap">PPAP Docs</TabsTrigger>
+          <TabsTrigger value="buildlots">Build Lots</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="bom">BOM</TabsTrigger>
+          <TabsTrigger value="line">Line Readiness</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="investment">Investment</TabsTrigger>
+          <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="exit">Exit Criteria & Deliverables</TabsTrigger>
         </TabsList>
+
+        {/* ── Overview ── */}
+        <TabsContent value="overview"><OverviewTab project={p} /></TabsContent>
 
         {/* ── Charter ── */}
         <TabsContent value="charter" className="space-y-3 max-w-3xl">
@@ -177,8 +220,61 @@ export default function NpdDetailPage() {
               </div>
             ))}
           </div>
+          <div className="pt-2 border-t">
+            <div className="text-sm font-semibold mb-2">Additional Details (optional)</div>
+            {CHARTER_FIELDS_OPTIONAL.map(([k, label]) => (
+              <div key={k} className="mb-3">
+                <Label>{label}</Label>
+                <Textarea
+                  className="mt-1"
+                  value={charter[k] || ''}
+                  onChange={(e) => setCharter({ ...charter, [k]: e.target.value })}
+                />
+              </div>
+            ))}
+            <div className="text-sm font-semibold mb-2">Extended Team (optional)</div>
+            <div className="grid grid-cols-3 gap-3">
+              {CHARTER_TEAM_OPTIONAL.map(([k, label]) => (
+                <div key={k}>
+                  <Label>{label}</Label>
+                  <Input className="mt-1" value={charter[k] || ''} onChange={(e) => setCharter({ ...charter, [k]: e.target.value })} />
+                </div>
+              ))}
+            </div>
+          </div>
           <Button onClick={async () => { await patch({ charter }); toast('Charter saved', 'success'); }}>Save Charter</Button>
         </TabsContent>
+
+        {/* ── PPAP Docs ── */}
+        <TabsContent value="ppap"><PpapTab project={p} /></TabsContent>
+
+        {/* ── Build Lots ── */}
+        <TabsContent value="buildlots">
+          <BuildLotsTab project={p} onSave={(buildLots) => patch({ buildLots })} />
+        </TabsContent>
+
+        {/* ── Timeline ── */}
+        <TabsContent value="timeline"><TimelineTab project={p} /></TabsContent>
+
+        {/* ── BOM ── */}
+        <TabsContent value="bom"><BomTab project={p} /></TabsContent>
+
+        {/* ── Line Readiness ── */}
+        <TabsContent value="line"><LineTab project={p} /></TabsContent>
+
+        {/* ── Reviews ── */}
+        <TabsContent value="reviews"><ReviewsTab project={p} /></TabsContent>
+
+        {/* ── Resources ── */}
+        <TabsContent value="resources">
+          <ResourcesTab project={p} onSave={(npdRes) => patch({ npdRes })} />
+        </TabsContent>
+
+        {/* ── Investment ── */}
+        <TabsContent value="investment"><InvestmentTab project={p} /></TabsContent>
+
+        {/* ── Budget ── */}
+        <TabsContent value="budget"><BudgetTab project={p} /></TabsContent>
 
         {/* ── Gates overview ── */}
         <TabsContent value="gates">
@@ -319,6 +415,24 @@ export default function NpdDetailPage() {
             </Button>
             <Button variant="outline" onClick={() => setEditInfo(false)}>Cancel</Button>
             <Button onClick={async () => { await patch(infoVals); setEditInfo(false); toast('Saved', 'success'); }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Conduct KO — pick kickoff date */}
+      <Dialog open={koOpen} onOpenChange={setKoOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Conduct Kickoff (KO)</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Set the kickoff date. Plan dates will be generated for every gate task.
+          </p>
+          <div className="space-y-1.5">
+            <Label>Kickoff Date</Label>
+            <Input type="date" value={koDate} onChange={(e) => setKoDate(e.target.value)} />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setKoOpen(false)}>Cancel</Button>
+            <Button onClick={confirmKo}>Confirm KO →</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
