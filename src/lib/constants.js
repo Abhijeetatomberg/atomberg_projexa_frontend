@@ -35,6 +35,10 @@ export const POC_SKIPPABLE = { 2: true, 3: true };
 export const TASK_ST = ['Not Started', 'On Track', 'Behind Schedule', 'Delayed', 'At Risk', 'Completed', 'Completed After Delay'];
 export const ACTION_ST = ['Open', 'In Progress', 'Done', 'Blocked'];
 
+export const POC_PROC = ['To procure', 'Ordered', 'Received'];
+export const POC_SRC = ['In-house', 'Bought-out', 'Vendor', 'RPT / Wire-cut'];
+export const POC_USED = ['Alpha', 'Beta', 'Beta 2'];
+
 export const BOM_TYPE = ['Dev', 'BO', 'Assy'];
 export const BOM_COMMON = ['New', 'Old', 'ECN'];
 export const BOM_OST = ['', 'On track', 'At Risk', 'WIP', 'Delayed', 'Delayed but Completed', 'Completed on time', 'New Part', 'Existing part', 'Standard Part'];

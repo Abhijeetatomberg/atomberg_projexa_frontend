@@ -14,6 +14,12 @@ export const fmtDate = (iso) => {
 
 export const todayIso = () => new Date().toISOString().slice(0, 10);
 
+export const daysBetweenIso = (a, b) => {
+  if (!a || !b) return 0;
+  const d = Math.round((new Date(b) - new Date(a)) / 86400000);
+  return isNaN(d) ? 0 : d;
+};
+
 export const addDaysIso = (iso, n) => {
   if (!iso) return '';
   const d = new Date(iso);
