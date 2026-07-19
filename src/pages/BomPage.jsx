@@ -24,6 +24,7 @@ import { toast } from '@/components/toaster';
 import {
   BOM_TYPE, BOM_COMMON, BOM_OST, BOM_FPA, BOM_MS, BUNITS, badgeForStatus,
 } from '@/lib/constants';
+import BomDetailSheet from './bom/DetailSheet';
 
 const mainFields = (projOptions) => [
   { key: 'cat', label: 'Business Unit', type: 'select', options: BUNITS },
@@ -109,6 +110,7 @@ export default function BomPage() {
   const [editing, setEditing] = useState(null);
   const [values, setValues] = useState(defaults);
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState('home');
 
   const load = async () => {
     setLoading(true);
@@ -205,7 +207,7 @@ export default function BomPage() {
   const flagged = rows.filter((b) => b.ost === 'Delayed' || b.ost === 'At Risk').slice(0, 8);
 
   // ── CRUD ──
-  const openCreate = () => { setEditing(null); setValues({ ...defaults, ms: ensureMs() }); setOpen(true); };
+  const openCreate = (proj) => { setEditing(null); setValues({ ...defaults, proj: proj || '', ms: ensureMs() }); setOpen(true); };
   const openEdit = (row) => { setEditing(row); setValues({ ...row, ms: ensureMs(row.ms) }); setOpen(true); };
   const setMs = (key, kind, val) => setValues((v) => ({ ...v, ms: { ...v.ms, [key]: { ...v.ms?.[key], [kind]: val } } }));
 
@@ -242,6 +244,16 @@ export default function BomPage() {
     }
   };
 
+  if (view === 'detail') {
+    return (
+      <BomDetailSheet
+        projects={projects}
+        onAdd={(proj) => { setView('home'); openCreate(proj); }}
+        onBack={() => setView('home')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -250,7 +262,8 @@ export default function BomPage() {
           <p className="text-sm text-muted-foreground">Bill of materials per project — parts, suppliers, tooling &amp; FPA milestones</p>
         </div>
         <div className="flex-1" />
-        <Button onClick={openCreate}><Plus /> Add Part</Button>
+        <Button variant="outline" onClick={() => setView('detail')}>Open Detailed Tracker →</Button>
+        <Button onClick={() => openCreate()}><Plus /> Add Part</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">

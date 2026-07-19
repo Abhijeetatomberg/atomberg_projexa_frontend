@@ -108,7 +108,7 @@ export default function Layout() {
           ))}
         </nav>
       </aside>
-      <div className={cn('flex-1 flex flex-col transition-[margin]', collapsed ? 'ml-16' : 'ml-60')}>
+      <div className={cn('flex-1 min-w-0 flex flex-col transition-[margin]', collapsed ? 'ml-16' : 'ml-60')}>
         <header className="sticky top-0 z-30 flex items-center gap-3 h-14 px-4 border-b bg-card">
           <Button variant="ghost" size="icon" onClick={() => setCollapsed((c) => !c)} title="Toggle sidebar">
             <Menu className="h-4 w-4" />
@@ -154,7 +154,7 @@ export default function Layout() {
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </Button>
         </header>
-        <main className="flex-1 p-6">
+        <main className="flex-1 min-w-0 p-6">
           <Outlet />
         </main>
       </div>
