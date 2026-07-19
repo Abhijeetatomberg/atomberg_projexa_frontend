@@ -100,6 +100,15 @@ export const HOD_ROLES = [
 
 export const SAMPLE_ST = ['New', 'In Progress', 'On Hold', 'Delayed', 'Delayed but Completed', 'Submitted', 'Completed', 'Dropped'];
 export const STD_CAT = ['Policy', 'Procedure (SOP)', 'Work Instruction (WI)', 'Format / Template', 'Standard', 'Manual / Guideline', 'Other'];
+export const STD_STATUS = ['Draft', 'Pending Approval', 'Active', 'Obsolete', 'Rejected'];
+export const STD_APPR_DEPTS = [
+  ['rd', 'R&D'],
+  ['quality', 'Quality'],
+  ['production', 'Production'],
+  ['pm', 'Project Management'],
+  ['ppc', 'PPC'],
+  ['procurement', 'Procurement'],
+];
 export const ECN_STATUS = ['Under Approval', 'Approved', 'Implemented', 'On Hold', 'Rejected'];
 
 export const DEPTS = [

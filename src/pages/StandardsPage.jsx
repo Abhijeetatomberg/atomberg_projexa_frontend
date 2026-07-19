@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Plus, Search, FileText, CheckCircle2, Paperclip, Download, X, Loader2, Trash2,
+  Plus, Search, FileText, CheckCircle2, Paperclip, Download, X, Loader2, Trash2, RefreshCcw, Clock,
 } from 'lucide-react';
-import { StdDocs, uploadAttachment, attachmentUrl, deleteAttachment } from '@/api/resources';
+import {
+  StdDocs, Users, uploadAttachment, attachmentUrl, deleteAttachment,
+} from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +19,11 @@ import FormFields from '@/components/crud/FormFields';
 import { toast } from '@/components/toaster';
 import { STD_CAT, badgeForStatus } from '@/lib/constants';
 import { fmtDate, cn } from '@/lib/utils';
+import { stdCanManage, revisionReady, promoteRevision, initialHistoryEntry } from '@/lib/standards';
 import { useAuth } from '@/context/AuthContext';
-
-const STD_STATUS = ['Active', 'Under Revision', 'Obsolete'];
+import RevisionModal from './standards/RevisionModal';
+import PendingModal from './standards/PendingModal';
+import HistoryModal from './standards/HistoryModal';
 
 const fields = [
   { key: 'title', label: 'Document Title', span: 2, placeholder: 'e.g. Project Management Procedure' },
@@ -27,14 +31,13 @@ const fields = [
   { key: 'category', label: 'Category', type: 'select', options: STD_CAT },
   { key: 'owner', label: 'Owner' },
   { key: 'effDate', label: 'Effective Date', type: 'date' },
-  { key: 'rev', label: 'Revision', type: 'number' },
-  { key: 'status', label: 'Status', type: 'select', options: STD_STATUS },
   { key: 'remarks', label: 'Remarks', type: 'textarea' },
 ];
 
 export default function StandardsPage() {
   const { isAdmin, user } = useAuth();
   const [docs, setDocs] = useState([]);
+  const [userNames, setUserNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [catFilter, setCatFilter] = useState('');
@@ -44,6 +47,9 @@ export default function StandardsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]); // File objects picked before the doc exists
+  const [revisionDoc, setRevisionDoc] = useState(null);
+  const [pendingDoc, setPendingDoc] = useState(null);
+  const [historyDoc, setHistoryDoc] = useState(null);
   const fileInputRef = useRef(null);
 
   const load = () => {
@@ -51,6 +57,18 @@ export default function StandardsPage() {
     StdDocs.list().then(setDocs).catch((e) => toast(e.message, 'error')).finally(() => setLoading(false));
   };
   useEffect(load, []);
+  useEffect(() => { Users.list().then((us) => setUserNames(us.map((u) => u.name))).catch(() => {}); }, []);
+
+  const updateDoc = async (id, patch) => {
+    try {
+      const u = await StdDocs.update(id, patch);
+      setDocs((p) => p.map((d) => (d.id === u.id ? u : d)));
+      return u;
+    } catch (e) {
+      toast(e.response?.data?.error || e.message, 'error');
+      return null;
+    }
+  };
 
   const filtered = useMemo(() => docs.filter((d) =>
     (!catFilter || d.category === catFilter) &&
@@ -65,7 +83,7 @@ export default function StandardsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setValues({ category: 'Procedure (SOP)', rev: 1, status: 'Active' });
+    setValues({ category: 'Procedure (SOP)' });
     setPendingFiles([]);
     setOpen(true);
   };
@@ -81,12 +99,9 @@ export default function StandardsPage() {
         toast('Document updated', 'success');
         setOpen(false);
       } else {
-        let created = await StdDocs.create({
-          ...values,
-          rev: values.rev || 1,
-          status: values.status || 'Active',
-          files: [],
-        });
+        const seed = { ...values, rev: 1, status: 'Active', files: [] };
+        seed.history = initialHistoryEntry(seed);
+        let created = await StdDocs.create(seed);
         if (pendingFiles.length) {
           const metas = [];
           for (const f of pendingFiles) {
@@ -163,20 +178,82 @@ export default function StandardsPage() {
 
   const removePendingFile = (idx) => setPendingFiles((p) => p.filter((_, i) => i !== idx));
 
+  // ── Revision / approval workflow ──
+  const submitRevision = async (rev) => {
+    const doc = revisionDoc;
+    const anyRequired = rev.approvals.some((a) => a.status === 'Pending');
+    if (anyRequired) {
+      await updateDoc(doc.id, { pendingRev: rev, status: 'Pending Approval' });
+      toast('Submitted for approval — notification email(s) sent', 'success');
+    } else {
+      const u = await updateDoc(doc.id, promoteRevision({ ...doc, pendingRev: rev }));
+      if (u) toast(`No approvals required — Rev ${u.rev} is live`, 'success');
+    }
+    setRevisionDoc(null);
+  };
+
+  const approve = async (dept) => {
+    const doc = pendingDoc;
+    const approvals = doc.pendingRev.approvals.map((a) => (a.dept === dept ? { ...a, status: 'Approved', respondedDate: new Date().toISOString().slice(0, 10) } : a));
+    const updatedDoc = { ...doc, pendingRev: { ...doc.pendingRev, approvals } };
+    if (revisionReady(updatedDoc.pendingRev)) {
+      const u = await updateDoc(doc.id, promoteRevision(updatedDoc));
+      if (u) { toast(`All approvals received — Rev ${u.rev} is now live`, 'success'); setPendingDoc(null); }
+    } else {
+      const u = await updateDoc(doc.id, { pendingRev: updatedDoc.pendingRev });
+      if (u) setPendingDoc(u);
+    }
+  };
+
+  const reject = async (dept) => {
+    if (!confirm('Reject this revision? The document stays on its current live version.')) return;
+    const doc = pendingDoc;
+    const approvals = doc.pendingRev.approvals.map((a) => (a.dept === dept ? { ...a, status: 'Rejected', respondedDate: new Date().toISOString().slice(0, 10) } : a));
+    const rejectedRev = { ...doc.pendingRev, approvals, status: 'Rejected' };
+    const u = await updateDoc(doc.id, { pendingRev: null, status: 'Active', history: [rejectedRev, ...(doc.history || [])] });
+    if (u) { toast('Revision rejected — document remains on its current version', 'error'); setPendingDoc(null); }
+  };
+
+  const cancelRevision = async () => {
+    const doc = pendingDoc;
+    const cancelledRev = { ...doc.pendingRev, status: 'Cancelled' };
+    const u = await updateDoc(doc.id, { pendingRev: null, status: 'Active', history: [cancelledRev, ...(doc.history || [])] });
+    if (u) { toast('Revision cancelled'); setPendingDoc(null); }
+  };
+
+  const attachRevFile = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const doc = pendingDoc;
+      try {
+        const meta = await uploadAttachment(file, { module: 'standards-revision', refId: `${doc.id}:rev${doc.pendingRev.rev}`, uploadedBy: user?.name });
+        const files = [...(doc.pendingRev.files || []), meta];
+        const u = await updateDoc(doc.id, { pendingRev: { ...doc.pendingRev, files } });
+        if (u) { setPendingDoc(u); toast('Revision file attached', 'success'); }
+      } catch (err) {
+        toast(err.response?.data?.error || err.message, 'error');
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-xl font-bold">Standards Library</h1>
           <p className="text-sm text-muted-foreground">
-            Controlled project-management documents — policies, procedures, work instructions &amp; formats
+            Controlled project-management documents — policies, procedures, work instructions &amp; formats, with revision &amp; approval tracking
           </p>
         </div>
         <div className="flex-1" />
         {isAdmin && <Button onClick={openCreate}><Plus /> Add Document</Button>}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-slate-100 text-slate-700"><FileText className="h-5 w-5" /></div>
           <div><div className="text-2xl font-bold leading-none">{docs.length}</div><div className="text-xs text-muted-foreground mt-1">Documents</div></div>
@@ -184,6 +261,10 @@ export default function StandardsPage() {
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-5 w-5" /></div>
           <div><div className="text-2xl font-bold leading-none">{docs.filter((d) => d.status === 'Active').length}</div><div className="text-xs text-muted-foreground mt-1">Active</div></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><RefreshCcw className="h-5 w-5" /></div>
+          <div><div className="text-2xl font-bold leading-none">{docs.filter((d) => d.pendingRev).length}</div><div className="text-xs text-muted-foreground mt-1">Pending Approval</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><Paperclip className="h-5 w-5" /></div>
@@ -233,7 +314,7 @@ export default function StandardsPage() {
               <TableHead>Effective</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Attachment</TableHead>
-              {isAdmin && <TableHead className="w-10" />}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -243,47 +324,55 @@ export default function StandardsPage() {
               <TableRow><TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                 {docs.length === 0 ? 'No documents yet.' : 'No documents match this filter.'}
               </TableCell></TableRow>
-            ) : filtered.map((d) => (
-              <TableRow
-                key={d.id}
-                className={cn(isAdmin && 'cursor-pointer')}
-                onClick={() => isAdmin && openEdit(d)}
-              >
-                <TableCell className="font-mono text-xs">{d.docNo || '—'}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{d.title}</div>
-                  {d.remarks && <div className="text-xs text-muted-foreground">{d.remarks}</div>}
-                </TableCell>
-                <TableCell><Badge variant="secondary">{d.category}</Badge></TableCell>
-                <TableCell>Rev {d.rev ?? 1}</TableCell>
-                <TableCell>{d.owner || '—'}</TableCell>
-                <TableCell>{fmtDate(d.effDate)}</TableCell>
-                <TableCell><Badge variant="outline" className={badgeForStatus(d.status)}>{d.status}</Badge></TableCell>
-                <TableCell className="text-muted-foreground">
-                  {(d.files || []).length ? `${d.files.length} file${d.files.length > 1 ? 's' : ''}` : '—'}
-                </TableCell>
-                {isAdmin && (
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      title="Remove"
-                      onClick={async () => {
-                        if (!confirm(`Remove "${d.title}" from the library?`)) return;
-                        try {
-                          await StdDocs.remove(d.id);
-                          setDocs((p) => p.filter((x) => x.id !== d.id));
-                          toast('Document removed', 'success');
-                        } catch (e) {
-                          toast(e.response?.data?.error || e.message, 'error');
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+            ) : filtered.map((d) => {
+              const canManage = stdCanManage(d, user, isAdmin);
+              return (
+                <TableRow key={d.id}>
+                  <TableCell className="font-mono text-xs">{d.docNo || '—'}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{d.title}</div>
+                    {d.remarks && <div className="text-xs text-muted-foreground">{d.remarks}</div>}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell><Badge variant="secondary">{d.category}</Badge></TableCell>
+                  <TableCell>
+                    Rev {d.rev ?? 1}
+                    {d.pendingRev && <span className="text-amber-600 text-xs font-semibold ml-1">→ Rev {d.pendingRev.rev} pending</span>}
+                  </TableCell>
+                  <TableCell>{d.owner || '—'}</TableCell>
+                  <TableCell>{fmtDate(d.effDate)}</TableCell>
+                  <TableCell><Badge variant="outline" className={badgeForStatus(d.status)}>{d.status}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {(d.files || []).length ? `${d.files.length} file${d.files.length > 1 ? 's' : ''}` : '—'}
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {d.pendingRev ? (
+                      <button type="button" className="text-amber-600 font-medium text-xs mr-3 hover:underline" onClick={() => setPendingDoc(d)}>View Pending</button>
+                    ) : canManage ? (
+                      <button type="button" className="text-primary font-medium text-xs mr-3 hover:underline" onClick={() => setRevisionDoc(d)}>Revise / Upgrade</button>
+                    ) : null}
+                    <button type="button" className="text-muted-foreground text-xs mr-3 hover:underline inline-flex items-center gap-1" onClick={() => setHistoryDoc(d)}><Clock className="h-3 w-3" /> History</button>
+                    {isAdmin && <button type="button" className="text-primary text-xs mr-3 hover:underline" onClick={() => openEdit(d)}>Edit</button>}
+                    {isAdmin && (
+                      <button
+                        type="button" className="text-red-600 text-xs hover:underline"
+                        onClick={async () => {
+                          if (!confirm(`Remove "${d.title}" from the library?`)) return;
+                          try {
+                            await StdDocs.remove(d.id);
+                            setDocs((p) => p.filter((x) => x.id !== d.id));
+                            toast('Document removed', 'success');
+                          } catch (e) {
+                            toast(e.response?.data?.error || e.message, 'error');
+                          }
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -294,6 +383,7 @@ export default function StandardsPage() {
             <DialogTitle>{editing ? 'Edit document' : 'Add document'}</DialogTitle>
           </DialogHeader>
           <FormFields fields={fields} values={values} onChange={setValues} />
+          {!editing && <p className="text-xs text-muted-foreground">This creates Rev 1. Future changes go through "Revise / Upgrade", with approval sign-off.</p>}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -331,7 +421,7 @@ export default function StandardsPage() {
               )
             ) : (
               pendingFiles.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No file selected yet — this creates Rev 1.</p>
+                <p className="text-xs text-muted-foreground">No file selected yet.</p>
               ) : (
                 <ul className="space-y-1">
                   {pendingFiles.map((f, i) => (
@@ -357,6 +447,21 @@ export default function StandardsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {revisionDoc && (
+        <RevisionModal doc={revisionDoc} userNames={userNames} onClose={() => setRevisionDoc(null)} onSubmit={submitRevision} />
+      )}
+      {pendingDoc && (
+        <PendingModal
+          doc={pendingDoc}
+          onClose={() => setPendingDoc(null)}
+          onApprove={approve}
+          onReject={reject}
+          onCancelRevision={cancelRevision}
+          onAttachFile={attachRevFile}
+        />
+      )}
+      {historyDoc && <HistoryModal doc={historyDoc} onClose={() => setHistoryDoc(null)} />}
     </div>
   );
 }

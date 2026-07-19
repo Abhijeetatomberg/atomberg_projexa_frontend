@@ -32,6 +32,11 @@ export const login = (username, password) =>
 export const askAi = (question, history) =>
   api.post('/ai/ask', { question, history }).then((r) => r.data);
 
+// Fire-and-forget email notification — used when an approver is assigned to a
+// pending Standards Library revision (mirrors notifyAssigned in the legacy app).
+export const notifyTaskAssigned = (payload) =>
+  api.post('/notify/task-assigned', payload).then((r) => r.data).catch(() => null);
+
 export const health = () => api.get('/../health').then((r) => r.data);
 
 // File attachments (S3-backed — see backend src/routes/attachmentRoutes.js).
