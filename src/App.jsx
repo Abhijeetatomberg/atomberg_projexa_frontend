@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import Splash from './components/Splash';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -27,17 +29,25 @@ import UsersPage from './pages/UsersPage';
 
 export default function App() {
   const { user } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+
+  const splash = showSplash && <Splash onDone={() => setShowSplash(false)} />;
 
   if (!user) {
     return (
-      <Routes>
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
+      <>
+        {splash}
+        <Routes>
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </>
     );
   }
 
   return (
-    <Routes>
+    <>
+      {splash}
+      <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -63,6 +73,7 @@ export default function App() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

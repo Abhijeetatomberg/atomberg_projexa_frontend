@@ -57,6 +57,40 @@
   }
 }
 
+@keyframes splash-pop {
+  0% { opacity: 0; transform: scale(.25) rotate(-14deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes splash-zoom {
+  0% { opacity: 0; transform: scale(.55); filter: blur(9px); letter-spacing: 16px; }
+  60% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); letter-spacing: -0.5px; }
+}
+@keyframes splash-up {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes splash-rule {
+  0% { width: 0; opacity: 0; }
+  100% { width: 210px; opacity: 1; }
+}
+@keyframes splash-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.splash-logo { animation: splash-pop .6s cubic-bezier(.2,.9,.3,1.35) both; }
+.splash-name { animation: splash-zoom 1s cubic-bezier(.22,.7,.25,1) .18s both; }
+.splash-rule { animation: splash-rule .9s ease .55s forwards; }
+.splash-sub { animation: splash-up .7s ease .72s both; }
+.splash-skip { animation: splash-up .6s ease 1.4s both; }
+.splash-reduce .splash-logo,
+.splash-reduce .splash-name,
+.splash-reduce .splash-rule,
+.splash-reduce .splash-sub,
+.splash-reduce .splash-skip {
+  animation: splash-fade .35s ease both !important;
+}
+
 @layer components {
   /* Card look matching the reference app: 14px radius, soft two-layer shadow */
   .card-surface {
