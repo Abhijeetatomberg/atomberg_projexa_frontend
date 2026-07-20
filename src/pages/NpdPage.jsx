@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -25,7 +26,7 @@ import {
   NPD_CATS, BUNITS, DEV_TYPES, GATE_LABELS,
 } from '@/lib/constants';
 import { npdPct, npdHealth } from '@/lib/npd';
-import { fmtDate, cn, taskBucket } from '@/lib/utils';
+import { fmtDate, taskBucket } from '@/lib/utils';
 
 const fields = [
   { key: 'name', label: 'Project Name', span: 2 },
@@ -111,36 +112,27 @@ export default function NpdPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><GitBranch className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Active Projects</div><div className="text-[11px] text-muted-foreground">{preKo ? `${preKo} pre-KO` : 'all kicked off'}</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{onTrack}</div><div className="text-xs text-muted-foreground mt-1">On Track</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={cn('h-10 w-10 rounded-lg grid place-items-center shrink-0', risk ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600')}><AlertTriangle className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{risk}</div><div className="text-xs text-muted-foreground mt-1">Delayed / At Risk</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={cn('h-10 w-10 rounded-lg grid place-items-center shrink-0', pendingTasks ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600')}><Clock className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{pendingTasks}</div><div className="text-xs text-muted-foreground mt-1">Pending Tasks</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><TrendingUp className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{avgPct}%</div><div className="text-xs text-muted-foreground mt-1">Avg Completion</div></div>
-          </CardContent>
-        </Card>
+        <StatTile
+          icon={GitBranch}
+          color="#2563eb"
+          value={rows.length}
+          label="Active Projects"
+          caption={preKo ? `${preKo} pre-KO` : 'all kicked off'}
+        />
+        <StatTile icon={CheckCircle2} color="#059669" value={onTrack} label="On Track" />
+        <StatTile
+          icon={AlertTriangle}
+          color={risk ? '#dc2626' : '#059669'}
+          value={risk}
+          label="Delayed / At Risk"
+        />
+        <StatTile
+          icon={Clock}
+          color={pendingTasks ? '#d97706' : '#059669'}
+          value={pendingTasks}
+          label="Pending Tasks"
+        />
+        <StatTile icon={TrendingUp} color="#7c3aed" value={`${avgPct}%`} label="Avg Completion" />
       </div>
 
       <CollapsibleSection title="Charts & analytics — NPD portfolio" defaultOpen={false}>

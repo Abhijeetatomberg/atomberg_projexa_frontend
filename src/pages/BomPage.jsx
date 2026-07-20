@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import FormFields from '@/components/crud/FormFields';
 import CollapsibleSection from '@/components/ui/collapsible-section';
+import StatTile from '@/components/ui/stat-tile';
 import Donut from '@/components/charts/Donut';
 import StackedBarList from '@/components/charts/StackedBarList';
 import { toast } from '@/components/toaster';
@@ -80,22 +81,6 @@ const ensureMs = (ms) => {
   return out;
 };
 const msDoneCount = (r) => BOM_MS.filter(([k]) => r.ms?.[k]?.actual).length;
-
-function Tile({ icon: Icon, color, value, label }) {
-  return (
-    <Card>
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0" style={{ background: `${color}18`, color }}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold leading-none">{value}</div>
-          <div className="text-xs font-medium mt-1">{label}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 const defaults = { type: 'Dev', common: 'New' };
 
@@ -267,18 +252,18 @@ export default function BomPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <Tile icon={Package} color="#0f172a" value={rows.length} label="Total Parts" />
-        <Tile icon={Package} color="#2563eb" value={dev} label="Dev Parts" />
-        <Tile icon={Boxes} color="#7c3aed" value={bo} label="BO Parts" />
-        <Tile icon={Wrench} color="#0891b2" value={assy} label="Assembly" />
-        <Tile icon={Zap} color="#059669" value={fpaApproved} label="FPA Approved" />
-        <Tile icon={AlertTriangle} color={delayed ? '#dc2626' : '#059669'} value={delayed} label="Delayed" />
+        <StatTile icon={Package} color="#0f172a" value={rows.length} label="Total Parts" />
+        <StatTile icon={Package} color="#2563eb" value={dev} label="Dev Parts" />
+        <StatTile icon={Boxes} color="#7c3aed" value={bo} label="BO Parts" />
+        <StatTile icon={Wrench} color="#0891b2" value={assy} label="Assembly" />
+        <StatTile icon={Zap} color="#059669" value={fpaApproved} label="FPA Approved" />
+        <StatTile icon={AlertTriangle} color={delayed ? '#dc2626' : '#059669'} value={delayed} label="Delayed" />
       </div>
 
       <CollapsibleSection title="Charts & analytics — BOM portfolio">
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Parts by Type</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Parts by Type</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-6 flex-wrap justify-center">
               <Donut segments={typeSegs} centerLabel="parts" />
               <div className="space-y-1 text-xs">
@@ -292,7 +277,7 @@ export default function BomPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">New vs Existing Parts</CardTitle></CardHeader>
+            <CardHeader><CardTitle>New vs Existing Parts</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-6 flex-wrap justify-center">
               <Donut segments={neSegs} centerLabel="parts" />
               <div className="space-y-1 text-xs">
@@ -309,7 +294,7 @@ export default function BomPage() {
 
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Project-wise Development Status</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Project-wise Development Status</CardTitle></CardHeader>
             <CardContent>
               <StackedBarList items={devStatusItems} />
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-3">
@@ -320,7 +305,7 @@ export default function BomPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">FPA Status by Project</CardTitle></CardHeader>
+            <CardHeader><CardTitle>FPA Status by Project</CardTitle></CardHeader>
             <CardContent>
               <StackedBarList items={fpaByProjectItems} />
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-3">
@@ -333,8 +318,8 @@ export default function BomPage() {
         </div>
 
         <Card>
-          <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm">Development Pipeline</CardTitle>
+          <CardHeader>
+            <CardTitle>Development Pipeline</CardTitle>
             <span className="text-[11px] text-muted-foreground">Parts that cleared each milestone</span>
           </CardHeader>
           <CardContent className="space-y-1.5">
@@ -351,7 +336,7 @@ export default function BomPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Parts Flagged — Delayed / At Risk</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Parts Flagged — Delayed / At Risk</CardTitle></CardHeader>
           <CardContent>
             {flagged.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No delays or at-risk parts 🎉</p>

@@ -2,14 +2,14 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-md border bg-card">
-    <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
+  <div className="relative w-full overflow-auto rounded-lg border bg-card">
+    <table ref={ref} className={cn('w-full caption-bottom text-[12.5px]', className)} {...props} />
   </div>
 ));
 Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn('[&_tr]:border-b bg-muted/60', className)} {...props} />
+  <thead ref={ref} className={cn('[&_tr]:border-b bg-card2', className)} {...props} />
 ));
 TableHeader.displayName = 'TableHeader';
 
@@ -19,26 +19,26 @@ const TableBody = React.forwardRef(({ className, ...props }, ref) => (
 TableBody.displayName = 'TableBody';
 
 const TableFooter = React.forwardRef(({ className, ...props }, ref) => (
-  <tfoot ref={ref} className={cn('border-t bg-muted/50 font-medium [&>tr]:last:border-b-0', className)} {...props} />
+  <tfoot ref={ref} className={cn('border-t bg-card2 font-medium [&>tr]:last:border-b-0', className)} {...props} />
 ));
 TableFooter.displayName = 'TableFooter';
 
 const TableRow = React.forwardRef(({ className, ...props }, ref) => (
-  <tr ref={ref} className={cn('border-b transition-colors hover:bg-muted/40 data-[state=selected]:bg-muted', className)} {...props} />
+  <tr ref={ref} className={cn('border-b transition-colors hover:bg-card2 data-[state=selected]:bg-muted', className)} {...props} />
 ));
 TableRow.displayName = 'TableRow';
 
 const TableHead = React.forwardRef(({ className, ...props }, ref) => (
   <th
     ref={ref}
-    className={cn('h-9 px-3 text-left align-middle text-xs font-semibold uppercase tracking-wide text-muted-foreground [&:has([role=checkbox])]:pr-0', className)}
+    className={cn('h-9 px-3.5 text-left align-middle text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground [&:has([role=checkbox])]:pr-0', className)}
     {...props}
   />
 ));
 TableHead.displayName = 'TableHead';
 
 const TableCell = React.forwardRef(({ className, ...props }, ref) => (
-  <td ref={ref} className={cn('px-3 py-2 align-middle [&:has([role=checkbox])]:pr-0', className)} {...props} />
+  <td ref={ref} className={cn('px-3.5 py-2.5 align-middle [&:has([role=checkbox])]:pr-0', className)} {...props} />
 ));
 TableCell.displayName = 'TableCell';
 

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import {
+  Search, ArrowUp, ArrowDown, ArrowUpDown, ListChecks, AlertTriangle, UserX,
+  GitBranch, Rocket, CheckSquare, Box, FileBox,
+} from 'lucide-react';
 import { Npds, Pocs, MomActions, Samples, PpapDocs, Users } from '@/api/resources';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -14,6 +17,7 @@ import { badgeForStatus } from '@/lib/constants';
 import { cn, fmtDate, taskBucket, todayIso } from '@/lib/utils';
 
 const ALL = '__all__';
+const SOURCE_ICONS = { NPD: GitBranch, POC: Rocket, Action: CheckSquare, Sample: Box, PPAP: FileBox };
 
 function SortTh({ label, k, sortKey, sortDir, onSort }) {
   const active = sortKey === k;
@@ -117,31 +121,15 @@ export default function PendingPage() {
       </div>
 
       <div className="grid grid-cols-3 md:grid-cols-8 gap-3">
-        <Card className={cn('cursor-pointer', srcFilter === '' && 'ring-2 ring-primary')} onClick={() => setSrcFilter('')}>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold">{items.length}</div>
-            <div className="text-xs text-muted-foreground">Total Open</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-red-600">{overdue}</div>
-            <div className="text-xs text-muted-foreground">Overdue</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-2xl font-bold text-amber-600">{unassigned}</div>
-            <div className="text-xs text-muted-foreground">Unassigned</div>
-          </CardContent>
-        </Card>
+        <div className="cursor-pointer" onClick={() => setSrcFilter('')}>
+          <StatTile icon={ListChecks} color="#2563eb" value={items.length} label="Total Open" className={cn(srcFilter === '' && 'ring-2 ring-primary')} />
+        </div>
+        <StatTile icon={AlertTriangle} color={overdue ? '#dc2626' : '#059669'} value={overdue} label="Overdue" />
+        <StatTile icon={UserX} color="#d97706" value={unassigned} label="Unassigned" />
         {sources.map((s) => (
-          <Card key={s} className={cn('cursor-pointer', srcFilter === s && 'ring-2 ring-primary')} onClick={() => setSrcFilter(srcFilter === s ? '' : s)}>
-            <CardContent className="p-3 text-center">
-              <div className="text-2xl font-bold">{items.filter((i) => i.src === s).length}</div>
-              <div className="text-xs text-muted-foreground">{s}</div>
-            </CardContent>
-          </Card>
+          <div key={s} className="cursor-pointer" onClick={() => setSrcFilter(srcFilter === s ? '' : s)}>
+            <StatTile icon={SOURCE_ICONS[s]} color="#2563eb" value={items.filter((i) => i.src === s).length} label={s} className={cn(srcFilter === s && 'ring-2 ring-primary')} />
+          </div>
         ))}
       </div>
 

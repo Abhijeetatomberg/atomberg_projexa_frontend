@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -26,10 +26,10 @@ import {
 import { cn, fmtDate, todayIso } from '@/lib/utils';
 
 const STAT_TILES = [
-  { status: 'Draft', label: 'Draft', icon: FlaskConical, color: 'text-slate-600', bg: 'bg-slate-100' },
-  { status: 'Submitted', label: 'Submitted', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-100' },
-  { status: 'In Process', label: 'In Process (signatures)', icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100' },
-  { status: 'Closed', label: 'Closed', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+  { status: 'Draft', label: 'Draft', icon: FlaskConical, color: '#64748b' },
+  { status: 'Submitted', label: 'Submitted', icon: Clock, color: '#2563eb' },
+  { status: 'In Process', label: 'In Process (signatures)', icon: AlertTriangle, color: '#d97706' },
+  { status: 'Closed', label: 'Closed', icon: CheckCircle2, color: '#059669' },
 ];
 
 const fields = [
@@ -116,21 +116,19 @@ export default function TrialPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {STAT_TILES.map((s) => (
-          <Card
+          <div
             key={s.status}
-            className={cn('cursor-pointer transition-colors', statusFilter === s.status && 'ring-2 ring-primary')}
+            className="cursor-pointer"
             onClick={() => setStatusFilter((p) => (p === s.status ? '' : s.status))}
           >
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={cn('h-10 w-10 rounded-lg grid place-items-center shrink-0', s.bg, s.color)}>
-                <s.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold leading-none">{counts[s.status] || 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-              </div>
-            </CardContent>
-          </Card>
+            <StatTile
+              icon={s.icon}
+              color={s.color}
+              value={counts[s.status] || 0}
+              label={s.label}
+              className={cn(statusFilter === s.status && 'ring-2 ring-primary')}
+            />
+          </div>
         ))}
       </div>
 

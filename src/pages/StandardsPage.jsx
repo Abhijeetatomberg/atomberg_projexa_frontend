@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -254,22 +254,10 @@ export default function StandardsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-slate-100 text-slate-700"><FileText className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{docs.length}</div><div className="text-xs text-muted-foreground mt-1">Documents</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{docs.filter((d) => d.status === 'Active').length}</div><div className="text-xs text-muted-foreground mt-1">Active</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><RefreshCcw className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{docs.filter((d) => d.pendingRev).length}</div><div className="text-xs text-muted-foreground mt-1">Pending Approval</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><Paperclip className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{docs.filter((d) => (d.files || []).length).length}</div><div className="text-xs text-muted-foreground mt-1">With Attachment</div></div>
-        </CardContent></Card>
+        <StatTile icon={FileText} color="#334155" value={docs.length} label="Documents" />
+        <StatTile icon={CheckCircle2} color="#059669" value={docs.filter((d) => d.status === 'Active').length} label="Active" />
+        <StatTile icon={RefreshCcw} color="#d97706" value={docs.filter((d) => d.pendingRev).length} label="Pending Approval" />
+        <StatTile icon={Paperclip} color="#7c3aed" value={docs.filter((d) => (d.files || []).length).length} label="With Attachment" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -277,11 +265,11 @@ export default function StandardsPage() {
           type="button"
           onClick={() => setCatFilter('')}
           className={cn(
-            'rounded-full border px-3 py-1 text-xs whitespace-nowrap',
-            catFilter === '' ? 'bg-foreground text-background border-foreground' : 'text-muted-foreground'
+            'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors',
+            catFilter === '' ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground hover:border-muted-foreground/40'
           )}
         >
-          All {docs.length}
+          All <span className={cn('rounded-full px-1.5 py-px text-[10.5px] font-bold', catFilter === '' ? 'bg-white/25 text-white' : 'bg-border text-muted-foreground')}>{docs.length}</span>
         </button>
         {STD_CAT.filter((c) => catCounts[c]).map((c) => (
           <button
@@ -289,11 +277,11 @@ export default function StandardsPage() {
             key={c}
             onClick={() => setCatFilter(catFilter === c ? '' : c)}
             className={cn(
-              'rounded-full border px-3 py-1 text-xs whitespace-nowrap',
-              catFilter === c ? 'bg-foreground text-background border-foreground' : 'text-muted-foreground'
+              'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors',
+              catFilter === c ? 'border-primary bg-primary text-primary-foreground' : 'text-muted-foreground hover:border-muted-foreground/40'
             )}
           >
-            {c} {catCounts[c]}
+            {c} <span className={cn('rounded-full px-1.5 py-px text-[10.5px] font-bold', catFilter === c ? 'bg-white/25 text-white' : 'bg-border text-muted-foreground')}>{catCounts[c]}</span>
           </button>
         ))}
         <div className="relative ml-auto">

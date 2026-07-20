@@ -66,7 +66,7 @@ export default function AskAiPage() {
                   {SUGGESTIONS.map((s) => (
                     <button
                       key={s}
-                      className="text-xs border rounded-full px-3 py-1.5 hover:bg-accent"
+                      className="rounded-full border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:text-foreground"
                       onClick={() => ask(s)}
                     >
                       {s}
@@ -80,15 +80,17 @@ export default function AskAiPage() {
             <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
               <div
                 className={cn(
-                  'rounded-xl px-3.5 py-2 max-w-[85%] text-sm whitespace-pre-wrap',
-                  m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                  'max-w-[72%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap',
+                  m.role === 'user'
+                    ? 'rounded-br-[3px] bg-primary text-primary-foreground'
+                    : 'rounded-bl-[3px] bg-card2 text-foreground'
                 )}
               >
                 {m.content}
               </div>
             </div>
           ))}
-          {busy && <div className="text-sm text-muted-foreground animate-pulse">Thinking…</div>}
+          {busy && <div className="text-[13px] italic text-muted-foreground animate-pulse">Thinking…</div>}
         </CardContent>
         <div className="border-t p-3 flex gap-2">
           <Input

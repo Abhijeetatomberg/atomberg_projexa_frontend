@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -141,30 +142,10 @@ export default function ReviewPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><CheckSquare className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{openActions.length}</div><div className="text-xs text-muted-foreground mt-1">Open Actions</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={cn('h-10 w-10 rounded-lg grid place-items-center shrink-0', overdueActions.length ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600')}><AlertTriangle className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{overdueActions.length}</div><div className="text-xs text-muted-foreground mt-1">Overdue</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckSquare className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{closedActions.length}</div><div className="text-xs text-muted-foreground mt-1">Closed</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><CalendarDays className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{reviews.length}</div><div className="text-xs text-muted-foreground mt-1">Reviews Logged</div></div>
-          </CardContent>
-        </Card>
+        <StatTile icon={CheckSquare} color="#d97706" value={openActions.length} label="Open Actions" />
+        <StatTile icon={AlertTriangle} color={overdueActions.length ? '#dc2626' : '#059669'} value={overdueActions.length} label="Overdue" />
+        <StatTile icon={CheckSquare} color="#059669" value={closedActions.length} label="Closed" />
+        <StatTile icon={CalendarDays} color="#2563eb" value={reviews.length} label="Reviews Logged" />
       </div>
 
       <Tabs defaultValue="actions">
@@ -183,7 +164,7 @@ export default function ReviewPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-background">Project</TableHead>
+                    <TableHead className="sticky left-0 bg-card2">Project</TableHead>
                     {matrixCols.map((r) => <TableHead key={r.id} className="whitespace-nowrap">Weekly MOM · {fmtDate(r.date)}</TableHead>)}
                   </TableRow>
                 </TableHeader>
@@ -192,7 +173,7 @@ export default function ReviewPage() {
                     <TableRow><TableCell colSpan={matrixCols.length + 1} className="py-10 text-center text-muted-foreground">No NPD projects yet</TableCell></TableRow>
                   ) : matrixProjects.map((p) => (
                     <TableRow key={p}>
-                      <TableCell className="font-medium sticky left-0 bg-background whitespace-nowrap">{p}</TableCell>
+                      <TableCell className="font-medium sticky left-0 bg-card whitespace-nowrap">{p}</TableCell>
                       {matrixCols.map((r) => {
                         const note = (r.notes && r.notes[p]) || '';
                         return (
@@ -276,11 +257,9 @@ export default function ReviewPage() {
           {reviews.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No reviews yet — start one.</p>}
           {[...reviews].reverse().map((r) => (
             <Card key={r.id} className="cursor-pointer hover:border-primary/40" onClick={() => openEditor(r)}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex justify-between">
-                  <span>Review — {fmtDate(r.date)}</span>
-                  <span className="font-normal text-muted-foreground">{Object.keys(r.notes || {}).length} project notes</span>
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="text-sm">Review — {fmtDate(r.date)}</CardTitle>
+                <span className="text-xs text-muted-foreground shrink-0">{Object.keys(r.notes || {}).length} project notes</span>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground truncate">
                 {r.attendees ? `Attendees: ${r.attendees}` : 'No attendees recorded'}

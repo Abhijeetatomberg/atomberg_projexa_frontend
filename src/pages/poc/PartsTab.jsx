@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Box, CheckCircle2, Clock, PackageSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -40,10 +40,10 @@ export default function PartsTab({ project, onSave }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Proto Parts</div><div className="text-2xl font-bold mt-1">{parts.length}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Received</div><div className="text-2xl font-bold mt-1 text-emerald-600">{cnt('Received')}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Ordered</div><div className="text-2xl font-bold mt-1 text-amber-600">{cnt('Ordered')}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">To Procure</div><div className="text-2xl font-bold mt-1">{cnt('To procure')}</div></CardContent></Card>
+        <StatTile icon={Box} color="#2563eb" value={parts.length} label="Proto Parts" />
+        <StatTile icon={CheckCircle2} color="#059669" value={cnt('Received')} label="Received" />
+        <StatTile icon={Clock} color="#d97706" value={cnt('Ordered')} label="Ordered" />
+        <StatTile icon={PackageSearch} color="#64748b" value={cnt('To procure')} label="To Procure" />
       </div>
 
       <div className="flex justify-between items-center">

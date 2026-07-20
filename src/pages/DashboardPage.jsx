@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import CollapsibleSection from '@/components/ui/collapsible-section';
 import Donut from '@/components/charts/Donut';
 import HBarList from '@/components/charts/HBarList';
@@ -30,33 +31,15 @@ const SAMPLE_COLOR = {
   'Delayed but Completed': '#ea580c', Submitted: '#7c3aed', Completed: '#059669', Dropped: '#64748b',
 };
 
-function Tile({ icon: Icon, color, value, label, caption, to }) {
-  const body = (
-    <Card className="hover:shadow-md transition-shadow h-full">
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0" style={{ background: `${color}18`, color }}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold leading-none">{value}</div>
-          <div className="text-xs font-medium mt-1">{label}</div>
-          {caption && <div className="text-[11px] text-muted-foreground">{caption}</div>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-  return to ? <Link to={to}>{body}</Link> : body;
-}
-
 function ChartCard({ icon: Icon, title, cap, to, toLabel = 'View all', children }) {
   return (
     <Card>
-      <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm flex items-center gap-1.5"><Icon className="h-4 w-4 text-muted-foreground" />{title}</CardTitle>
+      <CardHeader>
+        <CardTitle><Icon className="h-4 w-4" />{title}</CardTitle>
         {to ? (
-          <Link to={to} className="text-xs text-primary hover:underline">{toLabel} →</Link>
+          <Link to={to} className="text-xs text-primary hover:underline shrink-0">{toLabel} →</Link>
         ) : cap ? (
-          <span className="text-[11px] text-muted-foreground">{cap}</span>
+          <span className="text-[11px] text-muted-foreground shrink-0">{cap}</span>
         ) : null}
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -236,12 +219,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <Tile icon={GitBranch} color="#2563eb" value={data.npds.length} label="NPD Programs" caption={`${onTrackN} on track`} to="/npd" />
-        <Tile icon={Rocket} color="#7c3aed" value={activePocs.length} label="Active POCs" caption={`${data.pocs.length} total`} to="/poc" />
-        <Tile icon={FileText} color="#0891b2" value={openRfqs.length} label="Open RFQs" caption={`${winRate}% win rate`} to="/rfq" />
-        <Tile icon={Clock} color={overdueActions.length ? '#dc2626' : '#d97706'} value={allPendingTasks} label="Pending Tasks" caption={`${overdueActions.length + overdueTasks.length} overdue`} to="/pending" />
-        <Tile icon={Box} color="#0f766e" value={samplesOpen} label="Samples Open" caption={`${data.samples.length} total`} to="/samples" />
-        <Tile icon={Wallet} color="#0f172a" value={lakh(invTotal)} label="Investment" caption={`${data.investments.length} line items`} to="/investment" />
+        <StatTile icon={GitBranch} color="#2563eb" value={data.npds.length} label="NPD Programs" caption={`${onTrackN} on track`} to="/npd" />
+        <StatTile icon={Rocket} color="#7c3aed" value={activePocs.length} label="Active POCs" caption={`${data.pocs.length} total`} to="/poc" />
+        <StatTile icon={FileText} color="#0891b2" value={openRfqs.length} label="Open RFQs" caption={`${winRate}% win rate`} to="/rfq" />
+        <StatTile icon={Clock} color={overdueActions.length ? '#dc2626' : '#d97706'} value={allPendingTasks} label="Pending Tasks" caption={`${overdueActions.length + overdueTasks.length} overdue`} to="/pending" />
+        <StatTile icon={Box} color="#0f766e" value={samplesOpen} label="Samples Open" caption={`${data.samples.length} total`} to="/samples" />
+        <StatTile icon={Wallet} color="#0f172a" value={lakh(invTotal)} label="Investment" caption={`${data.investments.length} line items`} to="/investment" />
       </div>
 
       <CollapsibleSection title="Charts & analytics — timeline, gates, pipeline & risk">
@@ -339,8 +322,8 @@ export default function DashboardPage() {
           </ChartCard>
 
           <Card>
-            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-red-500" />Risk & Delays</CardTitle>
+            <CardHeader>
+              <CardTitle><AlertTriangle className="h-4 w-4 text-red-500" />Risk & Delays</CardTitle>
               <Badge variant="outline" className={riskRows.length ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}>{riskRows.length}</Badge>
             </CardHeader>
             <CardContent>
@@ -363,7 +346,7 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-sm">NPD Portfolio</CardTitle></CardHeader>
+          <CardHeader><CardTitle>NPD Portfolio</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {data.npds.length === 0 && <p className="text-sm text-muted-foreground">No NPD projects yet.</p>}
             {data.npds.map((p) => {
@@ -387,7 +370,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-sm">POC Portfolio</CardTitle></CardHeader>
+          <CardHeader><CardTitle>POC Portfolio</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {data.pocs.length === 0 && <p className="text-sm text-muted-foreground">No POC projects yet.</p>}
             {data.pocs.map((p) => {

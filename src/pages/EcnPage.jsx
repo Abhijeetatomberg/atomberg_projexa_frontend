@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -157,34 +158,22 @@ export default function EcnPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-slate-100 text-slate-700"><FileText className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total ECNs</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{rows.filter((r) => r.status === 'Approved').length}</div><div className="text-xs text-muted-foreground mt-1">Approved</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><Clock className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{rows.filter((r) => r.status === 'Under Approval').length}</div><div className="text-xs text-muted-foreground mt-1">Under Approval</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><Target className="h-5 w-5" /></div>
-          <div><div className="text-2xl font-bold leading-none">{rows.filter((r) => r.status === 'Implemented').length}</div><div className="text-xs text-muted-foreground mt-1">Implemented</div></div>
-        </CardContent></Card>
+        <StatTile icon={FileText} color="#334155" value={rows.length} label="Total ECNs" />
+        <StatTile icon={CheckCircle2} color="#059669" value={rows.filter((r) => r.status === 'Approved').length} label="Approved" />
+        <StatTile icon={Clock} color="#d97706" value={rows.filter((r) => r.status === 'Under Approval').length} label="Under Approval" />
+        <StatTile icon={Target} color="#2563eb" value={rows.filter((r) => r.status === 'Implemented').length} label="Implemented" />
       </div>
 
       <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
         {ECN_STATUS.map((s) => (
           <Card
             key={s}
-            className={cn('cursor-pointer transition-colors', statusFilter === s && 'ring-2 ring-primary')}
+            className={cn('cursor-pointer transition-shadow hover:shadow-elevated', statusFilter === s && 'ring-2 ring-primary')}
             onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
           >
             <CardContent className="p-3 text-center">
-              <div className="text-2xl font-bold">{statusCounts[s] || 0}</div>
-              <div className="text-xs text-muted-foreground">{s}</div>
+              <div className="text-xl font-bold leading-none">{statusCounts[s] || 0}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">{s}</div>
             </CardContent>
           </Card>
         ))}

@@ -4,6 +4,7 @@ import CrudPage from '@/components/crud/CrudPage';
 import { BudgetItems } from '@/api/resources';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import StatTile from '@/components/ui/stat-tile';
 import { inr, lakh, cn } from '@/lib/utils';
 import { BUDGET_CATS } from '@/lib/constants';
 
@@ -70,48 +71,44 @@ export default function BudgetPage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><Wallet className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{lakh(planned)}</div><div className="text-xs text-muted-foreground mt-1">Total Planned</div><div className="text-[11px] text-muted-foreground">Across {projAgg.length} projects</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><Wallet className="h-5 w-5" /></div>
-            <div>
-              <div className="text-2xl font-bold leading-none">{lakh(actual)}</div>
-              <div className="text-xs text-muted-foreground mt-1">Total Actual</div>
-              <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden mt-1">
-                <div className="h-full bg-blue-600" style={{ width: `${planned ? Math.min(100, Math.round((actual / planned) * 100)) : 0}%` }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><TrendingUp className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{variance >= 0 ? '+' : ''}{lakh(Math.abs(variance))}</div><div className="text-xs text-muted-foreground mt-1">Variance</div><div className="text-[11px] text-muted-foreground">{variance >= 0 ? 'Under budget' : 'Over budget'}</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><ListChecks className="h-5 w-5" /></div>
-            <div>
-              <div className="text-2xl font-bold leading-none">{rows.length}</div>
-              <div className="text-xs text-muted-foreground mt-1">Budget Items</div>
-              <div className="flex gap-1.5 mt-1">
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">{under} under</Badge>
-                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">{over} over</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatTile
+          icon={Wallet}
+          color="#059669"
+          value={lakh(planned)}
+          label="Total Planned"
+          caption={`Across ${projAgg.length} projects`}
+        />
+        <StatTile
+          icon={Wallet}
+          color="#2563eb"
+          value={lakh(actual)}
+          label="Total Actual"
+          barPct={planned ? Math.round((actual / planned) * 100) : 0}
+        />
+        <StatTile
+          icon={TrendingUp}
+          color="#059669"
+          value={`${variance >= 0 ? '+' : ''}${lakh(Math.abs(variance))}`}
+          label="Variance"
+          caption={variance >= 0 ? 'Under budget' : 'Over budget'}
+        />
+        <StatTile
+          icon={ListChecks}
+          color="#d97706"
+          value={rows.length}
+          label="Budget Items"
+          pills={(
+            <>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">{under} under</Badge>
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">{over} over</Badge>
+            </>
+          )}
+        />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><BarChart3 className="h-4 w-4 text-muted-foreground" />Budget by Category</CardTitle></CardHeader>
+          <CardHeader><CardTitle><BarChart3 className="h-4 w-4" />Budget by Category</CardTitle></CardHeader>
           <CardContent>
             {catAgg.length === 0 ? <p className="text-sm text-muted-foreground">No data yet</p> : (
               <>
@@ -135,7 +132,7 @@ export default function BudgetPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><TrendingUp className="h-4 w-4 text-muted-foreground" />Budget by Project</CardTitle></CardHeader>
+          <CardHeader><CardTitle><TrendingUp className="h-4 w-4" />Budget by Project</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {projAgg.length === 0 ? <p className="text-sm text-muted-foreground">No data yet</p> : projAgg.map((x) => {
               const v = x.p - x.a;

@@ -41,11 +41,9 @@ export default function GateChecklistPanel({ project, onSave }) {
         const rdyCount = delivs.filter((d) => d.avail).length;
         return (
           <Card key={key}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center justify-between">
-                <span>{GATE_TITLES[key] || key}</span>
-                <span className="text-xs font-normal text-muted-foreground">Exit {metCount}/{exits.length} · Deliverables {rdyCount}/{delivs.length}</span>
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>{GATE_TITLES[key] || key}</CardTitle>
+              <span className="text-[11px] font-medium text-muted-foreground shrink-0">Exit {metCount}/{exits.length} · Deliverables {rdyCount}/{delivs.length}</span>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-4">
               <div>

@@ -18,8 +18,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import FormFields from '@/components/crud/FormFields';
+import StatTile from '@/components/ui/stat-tile';
 import { toast } from '@/components/toaster';
-import { RFQ_STAGES } from '@/lib/constants';
+import { RFQ_STAGES, badgeForStatus } from '@/lib/constants';
 import { cn, fmtDate, inr } from '@/lib/utils';
 
 const stageMeta = (k) => RFQ_STAGES.find((s) => s.k === k) || RFQ_STAGES[0];
@@ -152,34 +153,14 @@ export default function RfqPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><FileText className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total RFQs</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><TrendingUp className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{open_.length}</div><div className="text-xs text-muted-foreground mt-1">Active Pipeline</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><Trophy className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{winRate}%</div><div className="text-xs text-muted-foreground mt-1">Win Rate</div><div className="text-[11px] text-muted-foreground">{won} won / {lost} lost</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-pink-100 text-pink-600"><Wallet className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{inr(pipeValue)}</div><div className="text-xs text-muted-foreground mt-1">Pipeline Value</div></div>
-          </CardContent>
-        </Card>
+        <StatTile icon={FileText} color="#d97706" value={rows.length} label="Total RFQs" />
+        <StatTile icon={TrendingUp} color="#2563eb" value={open_.length} label="Active Pipeline" />
+        <StatTile icon={Trophy} color="#059669" value={`${winRate}%`} label="Win Rate" caption={`${won} won / ${lost} lost`} />
+        <StatTile icon={Wallet} color="#db2777" value={inr(pipeValue)} label="Pipeline Value" />
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><TrendingUp className="h-4 w-4 text-muted-foreground" />Pipeline Distribution</CardTitle></CardHeader>
+        <CardHeader><CardTitle><TrendingUp className="h-4 w-4" />Pipeline Distribution</CardTitle></CardHeader>
         <CardContent>
           <div className="flex h-2.5 rounded-full overflow-hidden bg-muted mb-3">
             {pipeSegs.map((s) => s.count > 0 && (
@@ -260,7 +241,7 @@ export default function RfqPage() {
                 <TableCell>{r.bd}</TableCell>
                 <TableCell>{fmtDate(r.created)}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" style={{ color: m.color, borderColor: m.color }}>{m.label}</Badge>
+                  <Badge className={badgeForStatus(m.label)}>{m.label}</Badge>
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex gap-1">

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Rocket, ArrowRight, GitBranch } from 'lucide-react';
+import {
+  ArrowLeft, Rocket, ArrowRight, GitBranch, Check,
+} from 'lucide-react';
 import { Pocs, Npds } from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +31,43 @@ import TimelineTab from './poc/TimelineTab';
 import PartsTab from './poc/PartsTab';
 import GateChecklistPanel, { gatesMissing } from './poc/GateChecklistPanel';
 import ReviewsTab from './npd/ReviewsTab';
+
+// Purely presentational gate stepper — one node per POC stage, mirroring the
+// legacy app's `.stepper` — done/current/skipped/upcoming states derived from
+// data already on the project (p.stage / p.skip), no new logic.
+function StageStepper({ stage = 0, skip = {} }) {
+  return (
+    <div className="relative mt-1 flex items-start justify-between">
+      <div className="absolute left-[3%] right-[3%] top-[15px] h-[3px] bg-border" />
+      {POC_STAGE_LABELS.map((lbl, i) => {
+        const skipped = !!skip[i];
+        const done = !skipped && i < stage;
+        const cur = i === stage;
+        return (
+          <div key={lbl} className="relative z-10 flex flex-1 flex-col items-center gap-1.5">
+            <div
+              className={cn(
+                'grid h-[31px] w-[31px] shrink-0 place-items-center rounded-full border-2 text-[11px] font-bold',
+                skipped
+                  ? 'border-dashed border-border bg-card2 text-muted-foreground'
+                  : done
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
+                    : cur
+                      ? 'border-primary bg-primary text-primary-foreground ring-4 ring-primary/20'
+                      : 'border-border bg-card text-muted-foreground'
+              )}
+            >
+              {skipped ? '–' : done ? <Check className="h-4 w-4" /> : i + 1}
+            </div>
+            <div className={cn('text-center text-[10.5px] font-semibold text-muted-foreground', cur && 'text-primary', skipped && 'text-muted-foreground line-through')}>
+              {lbl}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function PocDetailPage() {
   const { id } = useParams();
@@ -160,6 +199,18 @@ export default function PocDetailPage() {
           <Button onClick={promote}><GitBranch /> Promote to NPD</Button>
         )}
       </div>
+
+      {p.koDone && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-bold">POC Progress</span>
+              <span className="text-[15px] font-bold text-primary">{pct}%</span>
+            </div>
+            <StageStepper stage={p.stage || 0} skip={p.skip || {}} />
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto">

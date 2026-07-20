@@ -17,8 +17,9 @@ const BOM_STAGE = {
   dfmClosure: 'tool', commercial: 'tool', tmko: 'tool', toolReady: 'tool', toolT0: 'tool',
   partsReceipt: 'val', fpaClosureAic: 'val', partSupplierFpa: 'val', ppap: 'val',
 };
-const STAGE_HEAD = { def: 'bg-slate-300', design: 'bg-blue-200', tool: 'bg-amber-200', val: 'bg-emerald-200', fpa: 'bg-violet-200' };
+const STAGE_HEAD = { def: 'bg-slate-200 text-slate-700', design: 'bg-blue-200 text-blue-900', tool: 'bg-amber-200 text-amber-900', val: 'bg-emerald-200 text-emerald-900', fpa: 'bg-violet-200 text-violet-900' };
 const STAGE_CELL = { def: '', design: 'bg-blue-50/60', tool: 'bg-amber-50/60', val: 'bg-emerald-50/60', fpa: 'bg-violet-50/60' };
+const HEAD_CELL = 'px-2 py-2 text-[10px] font-bold uppercase tracking-wide';
 
 // A part is "locked" (development dates no longer relevant) once it's an assembly, an
 // existing/old part, or its overall status reads as existing/standard — mirrors bomLocked().
@@ -103,41 +104,41 @@ export default function BomDetailSheet({ projects, onAdd, onBack }) {
       </div>
 
       <div className="flex flex-wrap gap-2 text-[11px]">
-        <span className="px-2 py-0.5 rounded font-medium bg-slate-300">Definition</span>
-        <span className="px-2 py-0.5 rounded font-medium bg-blue-200">Design</span>
-        <span className="px-2 py-0.5 rounded font-medium bg-amber-200">Tooling</span>
-        <span className="px-2 py-0.5 rounded font-medium bg-emerald-200">Validation</span>
-        <span className="px-2 py-0.5 rounded font-medium bg-violet-200">FPA &amp; Specs</span>
+        <span className={cn('px-2 py-0.5 rounded font-medium', STAGE_HEAD.def)}>Definition</span>
+        <span className={cn('px-2 py-0.5 rounded font-medium', STAGE_HEAD.design)}>Design</span>
+        <span className={cn('px-2 py-0.5 rounded font-medium', STAGE_HEAD.tool)}>Tooling</span>
+        <span className={cn('px-2 py-0.5 rounded font-medium', STAGE_HEAD.val)}>Validation</span>
+        <span className={cn('px-2 py-0.5 rounded font-medium', STAGE_HEAD.fpa)}>FPA &amp; Specs</span>
       </div>
       {ro && <p className="text-xs text-muted-foreground">Read-only overview across all projects — select a project above to edit parts inline.</p>}
 
-      <div className="rounded-md border overflow-auto max-h-[75vh]">
+      <div className="rounded-lg border overflow-auto max-h-[75vh] shadow-card">
         <table className="border-collapse text-xs w-max min-w-full">
           <thead>
             <tr>
-              <th className="sticky left-0 top-0 z-20 bg-slate-800 text-white px-2 py-2 min-w-[90px]">Part No</th>
-              <th className="sticky top-0 z-20 bg-slate-800 text-white px-2 py-2 min-w-[220px] text-left" style={{ left: 90 }}>Description</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[80px]', STAGE_HEAD.def)}>Type</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[64px]', STAGE_HEAD.def)}>Qty</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[80px]', STAGE_HEAD.def)}>New/Old</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[110px]', STAGE_HEAD.def)}>Overall Status</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[100px]', STAGE_HEAD.def)}>Sourcing</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[100px]', STAGE_HEAD.def)}>Tool Maker</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[100px]', STAGE_HEAD.def)}>Part Maker</th>
+              <th className={cn('sticky left-0 top-0 z-20 bg-card2 text-foreground min-w-[90px]', HEAD_CELL)}>Part No</th>
+              <th className={cn('sticky top-0 z-20 bg-card2 text-foreground min-w-[220px] text-left', HEAD_CELL)} style={{ left: 90 }}>Description</th>
+              <th className={cn('sticky top-0 z-10 min-w-[80px]', HEAD_CELL, STAGE_HEAD.def)}>Type</th>
+              <th className={cn('sticky top-0 z-10 min-w-[64px]', HEAD_CELL, STAGE_HEAD.def)}>Qty</th>
+              <th className={cn('sticky top-0 z-10 min-w-[80px]', HEAD_CELL, STAGE_HEAD.def)}>New/Old</th>
+              <th className={cn('sticky top-0 z-10 min-w-[110px]', HEAD_CELL, STAGE_HEAD.def)}>Overall Status</th>
+              <th className={cn('sticky top-0 z-10 min-w-[100px]', HEAD_CELL, STAGE_HEAD.def)}>Sourcing</th>
+              <th className={cn('sticky top-0 z-10 min-w-[100px]', HEAD_CELL, STAGE_HEAD.def)}>Tool Maker</th>
+              <th className={cn('sticky top-0 z-10 min-w-[100px]', HEAD_CELL, STAGE_HEAD.def)}>Part Maker</th>
               {BOM_MS.map(([key, label]) => (
-                <th key={key} colSpan={2} className={cn('sticky top-0 z-10 px-2 py-2 min-w-[150px]', STAGE_HEAD[BOM_STAGE[key]])}>{label}</th>
+                <th key={key} colSpan={2} className={cn('sticky top-0 z-10 min-w-[150px] normal-case tracking-normal', HEAD_CELL, STAGE_HEAD[BOM_STAGE[key]])}>{label}</th>
               ))}
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[110px]', STAGE_HEAD.fpa)}>FPA Status</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[90px]', STAGE_HEAD.fpa)}>FPA No.</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[70px]', STAGE_HEAD.fpa)}>Cavity</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[80px]', STAGE_HEAD.fpa)}>Tonnage</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[100px]', STAGE_HEAD.fpa)}>Machine</th>
-              <th className={cn('sticky top-0 z-10 px-2 py-2 min-w-[80px]', STAGE_HEAD.fpa)}>Cycle</th>
-              {!ro && <th className="sticky top-0 z-10 px-2 py-2 w-10" />}
+              <th className={cn('sticky top-0 z-10 min-w-[110px]', HEAD_CELL, STAGE_HEAD.fpa)}>FPA Status</th>
+              <th className={cn('sticky top-0 z-10 min-w-[90px]', HEAD_CELL, STAGE_HEAD.fpa)}>FPA No.</th>
+              <th className={cn('sticky top-0 z-10 min-w-[70px]', HEAD_CELL, STAGE_HEAD.fpa)}>Cavity</th>
+              <th className={cn('sticky top-0 z-10 min-w-[80px]', HEAD_CELL, STAGE_HEAD.fpa)}>Tonnage</th>
+              <th className={cn('sticky top-0 z-10 min-w-[100px]', HEAD_CELL, STAGE_HEAD.fpa)}>Machine</th>
+              <th className={cn('sticky top-0 z-10 min-w-[80px]', HEAD_CELL, STAGE_HEAD.fpa)}>Cycle</th>
+              {!ro && <th className="sticky top-0 z-10 px-2 py-2 w-10 bg-card2" />}
             </tr>
             <tr>
-              <th className="sticky left-0 z-20 bg-slate-800" style={{ top: 34 }} />
-              <th className="sticky z-20 bg-slate-800" style={{ top: 34, left: 90 }} />
+              <th className="sticky left-0 z-20 bg-card2" style={{ top: 34 }} />
+              <th className="sticky z-20 bg-card2" style={{ top: 34, left: 90 }} />
               {Array.from({ length: 7 }).map((_, i) => <th key={i} className={cn('sticky z-10', STAGE_HEAD.def)} style={{ top: 34 }} />)}
               {BOM_MS.map(([key]) => (
                 <Fragment key={key}>
@@ -159,9 +160,9 @@ export default function BomDetailSheet({ projects, onAdd, onBack }) {
               const done = isDone(b);
               const rowRo = ro || (locked && done);
               return (
-                <tr key={b.id} className={cn('border-b hover:bg-slate-50/70', statusRowClass(b))}>
-                  <td className="sticky left-0 bg-white border-r px-1">{rowRo ? <span className="block text-xs px-1 py-1">{b.pno}</span> : <TextCell value={b.pno} onChange={(v) => set(b, 'pno', v)} />}</td>
-                  <td className="sticky bg-white border-r px-1 text-left" style={{ left: 90 }}>{rowRo ? <span className="block text-xs px-1 py-1">{b.desc}</span> : <TextCell value={b.desc} onChange={(v) => set(b, 'desc', v)} wide />}</td>
+                <tr key={b.id} className={cn('border-b hover:bg-card2', statusRowClass(b))}>
+                  <td className="sticky left-0 bg-card border-r px-1">{rowRo ? <span className="block text-xs px-1 py-1">{b.pno}</span> : <TextCell value={b.pno} onChange={(v) => set(b, 'pno', v)} />}</td>
+                  <td className="sticky bg-card border-r px-1 text-left" style={{ left: 90 }}>{rowRo ? <span className="block text-xs px-1 py-1">{b.desc}</span> : <TextCell value={b.desc} onChange={(v) => set(b, 'desc', v)} wide />}</td>
                   <td className={STAGE_CELL.def}><SelectCell value={b.type} opts={BOM_TYPE} disabled={rowRo} onChange={(v) => set(b, 'type', v)} /></td>
                   <td className={STAGE_CELL.def}><TextCell value={b.qty} disabled={rowRo} onChange={(v) => set(b, 'qty', v)} /></td>
                   <td className={STAGE_CELL.def}><SelectCell value={b.common} opts={BOM_COMMON} disabled={rowRo} onChange={(v) => set(b, 'common', v)} /></td>

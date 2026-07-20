@@ -29,44 +29,44 @@ export default function PendingModal({ doc, onClose, onApprove, onReject, onCanc
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="font-semibold">{doc.title}</div>
-            <div className="text-xs text-muted-foreground">{doc.docNo} · Rev {doc.rev} → <b>Rev {rev.rev}</b></div>
+            <div className="text-[14.5px] font-bold leading-tight">{doc.title}</div>
+            <div className="text-[11.5px] text-muted-foreground mt-0.5">{doc.docNo} · Rev {doc.rev} → <b className="text-foreground">Rev {rev.rev}</b></div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-lg font-bold">{doneCount}/{required.length}</div>
-            <Progress value={pct} className="w-20" />
+            <div className="text-lg font-bold leading-none">{doneCount}/{required.length}</div>
+            <Progress value={pct} className="w-20 mt-1.5" />
           </div>
         </div>
 
-        <div className="rounded-md bg-muted/50 border-l-2 border-primary px-3 py-2 text-sm italic">
+        <div className="rounded-md border-t pt-3.5 text-[12.5px] italic leading-relaxed">
           "{rev.reason}"
-          <div className="text-xs text-muted-foreground not-italic mt-1">— {rev.changedBy} · {rev.date}</div>
+          <div className="text-[11px] text-muted-foreground not-italic mt-1.5">— {rev.changedBy} · {rev.date}</div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap text-sm">
-          <span className="text-xs font-semibold uppercase text-muted-foreground">Revision File</span>
+          <span className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Revision File</span>
           {(rev.files || []).length === 0 ? (
             <span className="text-xs text-muted-foreground">No file attached yet</span>
           ) : rev.files.map((f, i) => (
-            <span key={i} className="inline-flex items-center gap-1 rounded-md border bg-muted/50 px-2 py-0.5 text-xs">{f.name} <span className="text-amber-700">🔒 locked</span></span>
+            <span key={i} className="inline-flex items-center gap-1 rounded-md border bg-card2 px-2 py-0.5 text-xs">{f.name} <span className="text-amber-700">🔒 locked</span></span>
           ))}
           {canManage && <Button variant="ghost" size="sm" onClick={onAttachFile}><Paperclip className="h-3.5 w-3.5" /> Attach</Button>}
         </div>
 
-        <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase text-muted-foreground">Approvals</div>
+        <div className="flex flex-col gap-2">
+          <div className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Approvals</div>
           {rev.approvals.map((a) => {
             const notReq = a.status === 'Not Required';
             const canAct = isApprover(a, user, isAdmin) && a.status === 'Pending';
             const col = DEPT_COLORS[a.dept] || '#64748b';
             return (
-              <div key={a.dept} className={cn('flex items-center gap-3 rounded-md border px-3 py-2', notReq && 'opacity-50')}>
-                <div className="h-8 w-8 rounded-full grid place-items-center text-xs font-bold shrink-0" style={{ background: `${col}1c`, color: col }}>
+              <div key={a.dept} className={cn('flex items-center gap-3 rounded-[10px] border bg-card px-3 py-2.5 transition-opacity', notReq && 'opacity-50')}>
+                <div className="h-[34px] w-[34px] rounded-full grid place-items-center text-[11px] font-bold shrink-0" style={{ background: `${col}1c`, color: col }}>
                   {notReq ? '—' : twoLetterInitials(a.approver || a.deptLabel)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{a.deptLabel}</div>
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="text-[12.5px] font-bold">{a.deptLabel}</div>
+                  <div className="text-[11.5px] text-muted-foreground truncate mt-0.5">
                     {a.approver || <span className="italic">No approver needed</span>}
                     {a.respondedDate && <> · {a.respondedDate}</>}
                   </div>

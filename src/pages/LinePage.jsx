@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import FormFields from '@/components/crud/FormFields';
 import CollapsibleSection from '@/components/ui/collapsible-section';
+import StatTile from '@/components/ui/stat-tile';
 import Donut from '@/components/charts/Donut';
 import StackedBarList from '@/components/charts/StackedBarList';
 import { toast } from '@/components/toaster';
@@ -62,22 +63,6 @@ const phasePct = (r, phase) => {
   const done = keys.filter(([k]) => r.ms?.[k]?.actual).length;
   return keys.length ? Math.round((done / keys.length) * 100) : 0;
 };
-
-function Tile({ icon: Icon, color, value, label }) {
-  return (
-    <Card>
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0" style={{ background: `${color}18`, color }}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold leading-none">{value}</div>
-          <div className="text-xs font-medium mt-1">{label}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 const defaults = { existing: 'New', readiness: 'Not Started' };
 
@@ -206,16 +191,16 @@ export default function LinePage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Tile icon={Factory} color="#0f172a" value={rows.length} label="Processes / Lines" />
-        <Tile icon={CheckCircle2} color="#059669" value={ready} label="Ready" />
-        <Tile icon={Clock} color="#2563eb" value={inProgress} label="In Progress" />
-        <Tile icon={AlertTriangle} color={atRisk ? '#dc2626' : '#059669'} value={atRisk} label="At Risk / Delayed" />
+        <StatTile icon={Factory} color="#0f172a" value={rows.length} label="Processes / Lines" />
+        <StatTile icon={CheckCircle2} color="#059669" value={ready} label="Ready" />
+        <StatTile icon={Clock} color="#2563eb" value={inProgress} label="In Progress" />
+        <StatTile icon={AlertTriangle} color={atRisk ? '#dc2626' : '#059669'} value={atRisk} label="At Risk / Delayed" />
       </div>
 
       <CollapsibleSection title="Charts & analytics — Line Readiness portfolio">
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Readiness Distribution</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Readiness Distribution</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-6 flex-wrap justify-center">
               <Donut segments={readySegs} centerLabel="processes" />
               <div className="space-y-1 text-xs">
@@ -229,7 +214,7 @@ export default function LinePage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Readiness by Project</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Readiness by Project</CardTitle></CardHeader>
             <CardContent>
               <StackedBarList items={readyByProjectItems} />
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-3">
@@ -242,8 +227,8 @@ export default function LinePage() {
         </div>
 
         <Card>
-          <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm">Readiness Milestone Pipeline</CardTitle>
+          <CardHeader>
+            <CardTitle>Readiness Milestone Pipeline</CardTitle>
             <div className="flex gap-3 text-[11px] text-muted-foreground">
               {PHASES.map((p) => (
                 <span key={p} className="flex items-center gap-1"><span className="h-2 w-2 rounded-full inline-block" style={{ background: PHASE_COLOR[p] }} />{PHASE_LABEL[p]}</span>
@@ -264,7 +249,7 @@ export default function LinePage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Processes Flagged — At Risk / Delayed</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Processes Flagged — At Risk / Delayed</CardTitle></CardHeader>
           <CardContent>
             {flagged.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No at-risk or delayed processes 🎉</p>

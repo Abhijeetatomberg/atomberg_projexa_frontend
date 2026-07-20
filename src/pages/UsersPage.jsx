@@ -3,7 +3,7 @@ import { Users as UsersIcon, ShieldCheck, UserCheck, Building2 } from 'lucide-re
 import CrudPage from '@/components/crud/CrudPage';
 import { Users } from '@/api/resources';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import { useAuth } from '@/context/AuthContext';
 import { DEPTS } from '@/lib/constants';
 
@@ -47,30 +47,10 @@ export default function UsersPage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-slate-100 text-slate-700"><UsersIcon className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total Users</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><ShieldCheck className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{admins}</div><div className="text-xs text-muted-foreground mt-1">Admins</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><UserCheck className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{members}</div><div className="text-xs text-muted-foreground mt-1">Members</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-cyan-100 text-cyan-600"><Building2 className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{depts}</div><div className="text-xs text-muted-foreground mt-1">Departments</div></div>
-          </CardContent>
-        </Card>
+        <StatTile icon={UsersIcon} color="#334155" value={rows.length} label="Total Users" />
+        <StatTile icon={ShieldCheck} color="#7c3aed" value={admins} label="Admins" />
+        <StatTile icon={UserCheck} color="#2563eb" value={members} label="Members" />
+        <StatTile icon={Building2} color="#0891b2" value={depts} label="Departments" />
       </div>
 
       <CrudPage

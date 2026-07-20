@@ -75,20 +75,20 @@ export default function Layout() {
     <div className="flex min-h-screen">
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 flex flex-col border-r border-slate-800 bg-[#0b1526] transition-[width] z-40',
+          'fixed inset-y-0 left-0 flex flex-col bg-sidebar transition-[width] z-40',
           collapsed ? 'w-16' : 'w-60'
         )}
       >
-        <div className="flex items-center gap-2.5 px-4 h-14 border-b border-slate-800 shrink-0">
-          <img src={AtombergLogo} alt="Atomberg" className="h-8 w-8 shrink-0 rounded-full object-cover bg-white" />
+        <div className="flex items-center gap-2.5 px-4 h-14 border-b border-white/10 shrink-0">
+          <img src={AtombergLogo} alt="Atomberg" className="h-8 w-8 shrink-0 rounded-full object-cover bg-white ring-1 ring-brand/40" />
           {!collapsed && (
             <div className="min-w-0">
               <div className="text-sm font-bold leading-none text-white truncate">Projexa</div>
-              <div className="text-[10px] text-slate-400 truncate">Project Tracking Suite</div>
+              <div className="text-[10px] text-sidebar-muted truncate">Project Tracking Suite</div>
             </div>
           )}
         </div>
-        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+        <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
           {NAV.filter((n) => !n.adminOnly || isAdmin).map((n) => (
             <NavLink
               key={n.to}
@@ -97,64 +97,79 @@ export default function Layout() {
               title={collapsed ? n.label : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-slate-300 hover:bg-white/5 hover:text-white border-l-2 border-transparent',
-                  isActive && 'bg-white/10 text-white border-l-2 border-orange-400'
+                  'relative flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[12.5px] font-medium text-sidebar-foreground/90 hover:bg-sidebar-hover transition-colors',
+                  isActive && 'bg-sidebar-active text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-brand'
                 )
               }
             >
-              <n.icon className="h-4 w-4 shrink-0" style={{ color: n.color }} />
+              <span
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                style={{ background: `${n.color}26`, color: n.color }}
+              >
+                <n.icon className="h-[15px] w-[15px]" />
+              </span>
               {!collapsed && <span className="truncate">{n.label}</span>}
             </NavLink>
           ))}
         </nav>
       </aside>
       <div className={cn('flex-1 min-w-0 flex flex-col transition-[margin]', collapsed ? 'ml-16' : 'ml-60')}>
-        <header className="sticky top-0 z-30 flex items-center gap-3 h-14 px-4 border-b bg-card">
+        <header className="sticky top-0 z-30 flex items-center gap-3 h-12 px-4 border-b bg-card">
           <Button variant="ghost" size="icon" onClick={() => setCollapsed((c) => !c)} title="Toggle sidebar">
             <Menu className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-1 text-sm min-w-0">
+          <div className="flex items-center gap-2 text-xs min-w-0">
             <span className="text-muted-foreground">Home</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="font-semibold truncate">{current.label}</span>
+            <span className="text-muted-foreground/60">›</span>
+            <span className="font-semibold text-foreground truncate">{current.label}</span>
           </div>
           <div className="flex-1" />
           <div
             className={cn(
-              'hidden sm:flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium',
+              'hidden sm:flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11.5px] font-semibold',
               dbStatus === 'connected' && 'border-emerald-200 bg-emerald-50 text-emerald-700',
               dbStatus === 'unreachable' && 'border-red-200 bg-red-50 text-red-700',
-              dbStatus === 'checking' && 'border-border bg-muted text-muted-foreground'
+              dbStatus === 'checking' && 'border-border bg-card2 text-muted-foreground'
             )}
             title={dbStatus === 'unreachable' ? 'Could not reach the backend/database' : undefined}
           >
-            <Database className="h-3.5 w-3.5" />
+            <span
+              className={cn(
+                'h-2 w-2 rounded-full shrink-0',
+                dbStatus === 'connected' && 'bg-emerald-500',
+                dbStatus === 'unreachable' && 'bg-red-500',
+                dbStatus === 'checking' && 'bg-slate-400'
+              )}
+            />
             {dbStatus === 'connected' ? 'Database Connected' : dbStatus === 'unreachable' ? 'Database not connected' : 'Checking…'}
           </div>
-          <select
-            value={fontScale}
-            onChange={(e) => setFontScale(Number(e.target.value))}
-            className="hidden sm:block h-8 rounded-md border border-input bg-background px-2 text-xs font-medium"
-            title="Text size"
-          >
-            {FONT_SCALES.map((s) => (
-              <option key={s} value={s}>Aa {s}%</option>
-            ))}
-          </select>
+          <div className="hidden sm:flex items-center gap-1 rounded-md border border-input bg-card px-2 py-1">
+            <span className="text-xs font-bold text-muted-foreground">Aa</span>
+            <select
+              value={fontScale}
+              onChange={(e) => setFontScale(Number(e.target.value))}
+              className="h-5 border-0 bg-transparent px-1 text-xs font-medium text-foreground focus:outline-none"
+              title="Text size"
+            >
+              {FONT_SCALES.map((s) => (
+                <option key={s} value={s}>{s}%</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2 pl-1">
-            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary grid place-items-center text-xs font-bold shrink-0">
+            <div className="h-[26px] w-[26px] rounded-full bg-primary text-primary-foreground grid place-items-center text-[10px] font-bold shrink-0">
               {initials(user?.name || user?.username || '?')}
             </div>
             <div className="hidden md:block min-w-0">
-              <div className="text-xs font-semibold truncate">{user?.name || user?.username}</div>
-              <div className="text-[10px] text-muted-foreground uppercase truncate">{user?.role}</div>
+              <div className="text-xs font-semibold leading-tight truncate">{user?.name || user?.username}</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide leading-tight truncate">{user?.role}</div>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => { logout(); navigate('/login'); }}>
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </Button>
         </header>
-        <main className="flex-1 min-w-0 p-6">
+        <main className="flex-1 min-w-0 p-[22px]">
           <Outlet />
         </main>
       </div>

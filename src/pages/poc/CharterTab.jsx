@@ -83,7 +83,7 @@ export default function CharterTab({ project, onSave }) {
 
   return (
     <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-sm">POC Charter</CardTitle></CardHeader>
+      <CardHeader><CardTitle>POC Charter</CardTitle></CardHeader>
       <CardContent className="space-y-4 max-w-3xl">
         <div>
           <Label>Problem Statement / Opportunity</Label>

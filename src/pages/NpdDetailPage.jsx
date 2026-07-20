@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Rocket, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowLeft, Rocket, CheckCircle2, Circle, Minus } from 'lucide-react';
 import { Npds } from '@/api/resources';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,40 @@ const CHARTER_TEAM_OPTIONAL = [
   ['production', 'Production'],
   ['quality', 'Plant Quality'],
 ];
+
+// Presentational gate stepper — KO + AB-0..AB-7 nodes connected by a line.
+// Completed gates are filled green with a check, the current gate is blue
+// with a glow ring, skipped/excluded gates render as a dashed "–" outline.
+function GateStepper({ project }) {
+  return (
+    <div className="relative flex items-start justify-between pt-1">
+      <div className="absolute left-[3%] right-[3%] top-[18.5px] h-[2px] bg-border" />
+      {GATE_LABELS.map((g, i) => {
+        const gk = i > 0 && GATES[i - 1] ? gateKey(GATES[i - 1].g) : null;
+        const skip = i > 0 && project.category && gk && !gateIncluded(project, gk);
+        const done = !skip && (i === 0 ? project.koDone : i < (project.gate || 0));
+        const cur = !skip && i === (project.gate || 0);
+        return (
+          <div key={g} className="relative z-10 flex flex-1 flex-col items-center gap-1.5">
+            <div
+              className={cn(
+                'grid h-8 w-8 place-items-center rounded-full border-2 bg-card text-[11px] font-bold text-muted-foreground',
+                done && 'border-emerald-600 bg-emerald-50 text-emerald-600',
+                cur && 'border-primary bg-primary text-primary-foreground shadow-[0_0_0_4px_rgba(37,99,235,0.18)]',
+                skip && 'border-border bg-card2 text-muted-foreground/50'
+              )}
+            >
+              {skip ? <Minus className="h-3.5 w-3.5" /> : done ? <CheckCircle2 className="h-4 w-4" /> : i}
+            </div>
+            <div className={cn('text-center text-[10.5px] font-semibold text-muted-foreground', cur && 'text-primary', skip && 'text-muted-foreground/50 line-through')}>
+              {g}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const infoFields = [
   { key: 'name', label: 'Project Name', span: 2 },
@@ -172,6 +206,10 @@ export default function NpdDetailPage() {
         </div>
         <Button variant="outline" onClick={() => { setInfoVals(p); setEditInfo(true); }}>Edit Info</Button>
         {!p.koDone && <Button onClick={conductKo}><Rocket /> Conduct KO</Button>}
+      </div>
+
+      <div className="rounded-lg border bg-card p-4 shadow-card">
+        <GateStepper project={p} />
       </div>
 
       <Tabs defaultValue={p.koDone ? 'overview' : 'charter'}>

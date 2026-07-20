@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -233,30 +234,10 @@ export default function PpapPage() {
       {active && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><FileBox className="h-5 w-5" /></div>
-                <div><div className="text-2xl font-bold leading-none">{primSet.length}</div><div className="text-xs text-muted-foreground mt-1">Total Documents</div></div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-5 w-5" /></div>
-                <div><div className="text-2xl font-bold leading-none">{approved}</div><div className="text-xs text-muted-foreground mt-1">Approved</div></div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-amber-100 text-amber-600"><Clock className="h-5 w-5" /></div>
-                <div><div className="text-2xl font-bold leading-none">{submitted}</div><div className="text-xs text-muted-foreground mt-1">Submitted</div></div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-slate-100 text-slate-500"><CircleDashed className="h-5 w-5" /></div>
-                <div><div className="text-2xl font-bold leading-none">{notStarted}</div><div className="text-xs text-muted-foreground mt-1">Not Started</div></div>
-              </CardContent>
-            </Card>
+            <StatTile icon={FileBox} color="#d97706" value={primSet.length} label="Total Documents" />
+            <StatTile icon={CheckCircle2} color="#059669" value={approved} label="Approved" />
+            <StatTile icon={Clock} color="#d97706" value={submitted} label="Submitted" />
+            <StatTile icon={CircleDashed} color="#64748b" value={notStarted} label="Not Started" />
           </div>
 
           {projects.length > 1 && (
@@ -275,8 +256,8 @@ export default function PpapPage() {
                       </div>
                       <Progress value={set.length ? (ap / set.length) * 100 : 0} />
                       <div className="flex gap-1.5 mt-2.5">
-                        <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200">{ap} Approved</Badge>
-                        <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">{rev} Review</Badge>
+                        <Badge variant="outline" className={badgeForStatus('Approved')}>{ap} Approved</Badge>
+                        <Badge variant="outline" className={badgeForStatus('Submitted')}>{rev} Review</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -286,11 +267,9 @@ export default function PpapPage() {
           )}
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-sm">
-                <span>{active}</span>
-                <span className="text-muted-foreground font-normal">{approved} / {primSet.length} approved</span>
-              </CardTitle>
+            <CardHeader>
+              <CardTitle className="text-sm">{active}</CardTitle>
+              <span className="text-xs font-normal text-muted-foreground shrink-0">{approved} / {primSet.length} approved</span>
             </CardHeader>
             <CardContent>
               <Progress value={primSet.length ? (approved / primSet.length) * 100 : 0} />

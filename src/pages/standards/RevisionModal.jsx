@@ -54,8 +54,8 @@ export default function RevisionModal({ doc, userNames, onClose, onSubmit }) {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Revise / Upgrade</DialogTitle></DialogHeader>
-        <p className="text-sm -mt-2">
-          <b>{doc.title}</b><br />
+        <p className="text-[12.5px] -mt-2 leading-relaxed">
+          <b className="text-[13px]">{doc.title}</b><br />
           <span className="text-muted-foreground">Current Rev {doc.rev || 1} → creates Rev {(doc.rev || 1) + 1}, locked until every required approval below is in.</span>
         </p>
         <div className="space-y-1.5">
@@ -67,7 +67,7 @@ export default function RevisionModal({ doc, userNames, onClose, onSubmit }) {
           <Label>Approvals Required</Label>
           {STD_APPR_DEPTS.map(([k, lbl]) => (
             <div key={k} className="flex items-center gap-3">
-              <span className="w-40 text-sm">{lbl}</span>
+              <span className="w-40 text-[12.5px] font-medium">{lbl}</span>
               <Select value={approvers[k]} onValueChange={(v) => setApprovers((a) => ({ ...a, [k]: v }))}>
                 <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                 <SelectContent>

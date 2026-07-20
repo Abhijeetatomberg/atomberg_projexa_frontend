@@ -32,19 +32,17 @@ export default function HomePage() {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
         {modules.map((m) => (
-          <Link key={m.to} to={m.to}>
-            <Card className="h-full transition-shadow hover:shadow-md hover:border-primary/40">
-              <CardContent className="p-4 flex items-start gap-3">
+          <Link key={m.to} to={m.to} className="block">
+            <Card className="h-full rounded-lg border p-[18px_16px] shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:shadow-elevated hover:border-transparent">
+              <CardContent className="p-0">
                 <div
-                  className="h-9 w-9 shrink-0 rounded-lg grid place-items-center"
+                  className="h-[42px] w-[42px] rounded-[11px] grid place-items-center mb-3"
                   style={{ background: `${m.color}18`, color: m.color }}
                 >
-                  <m.icon className="h-5 w-5" />
+                  <m.icon className="h-[21px] w-[21px]" />
                 </div>
-                <div>
-                  <div className="text-sm font-semibold">{m.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{m.desc}</div>
-                </div>
+                <div className="text-[13.5px] font-bold text-foreground mb-[3px]">{m.label}</div>
+                <div className="text-[11px] text-muted-foreground leading-[1.4]">{m.desc}</div>
               </CardContent>
             </Card>
           </Link>

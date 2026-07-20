@@ -1,5 +1,7 @@
+import { CheckCircle2, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -43,13 +45,13 @@ export default function TimelineTab({ project }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Stages Complete</div><div className="text-2xl font-bold mt-1">{done}/{active.length}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Overall Complete</div><div className="text-2xl font-bold mt-1">{Math.round(active.reduce((a, s) => a + s.pct, 0) / (active.length || 1))}%</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Stages At Risk</div><div className="text-2xl font-bold mt-1" style={{ color: late ? '#dc2626' : undefined }}>{late}</div></CardContent></Card>
+        <StatTile icon={CheckCircle2} color="#059669" value={`${done}/${active.length}`} label="Stages Complete" />
+        <StatTile icon={TrendingUp} color="#2563eb" value={`${Math.round(active.reduce((a, s) => a + s.pct, 0) / (active.length || 1))}%`} label="Overall Complete" />
+        <StatTile icon={AlertTriangle} color={late ? '#dc2626' : '#059669'} value={late} label="Stages At Risk" />
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">POC Gantt — plan &amp; progress by stage</CardTitle></CardHeader>
+        <CardHeader><CardTitle>POC Gantt — plan &amp; progress by stage</CardTitle></CardHeader>
         <CardContent className="space-y-2.5">
           {stages.filter((s) => !s.skip).map((s) => (
             <div key={s.lbl} className="flex items-center gap-3">
@@ -66,7 +68,7 @@ export default function TimelineTab({ project }) {
       </Card>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Stage Schedule</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Stage Schedule</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>

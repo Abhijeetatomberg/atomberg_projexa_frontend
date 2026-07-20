@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -84,34 +85,14 @@ export default function PocPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-violet-100 text-violet-600"><Rocket className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{rows.length}</div><div className="text-xs text-muted-foreground mt-1">Total POCs</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-blue-100 text-blue-600"><Layers className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{active.length}</div><div className="text-xs text-muted-foreground mt-1">Active POCs</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-emerald-100 text-emerald-600"><GitBranch className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{promoted.length}</div><div className="text-xs text-muted-foreground mt-1">Promoted to NPD</div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0 bg-cyan-100 text-cyan-600"><TrendingUp className="h-5 w-5" /></div>
-            <div><div className="text-2xl font-bold leading-none">{avgPct}%</div><div className="text-xs text-muted-foreground mt-1">Avg. Progress (active)</div></div>
-          </CardContent>
-        </Card>
+        <StatTile icon={Rocket} color="#7c3aed" value={rows.length} label="Total POCs" />
+        <StatTile icon={Layers} color="#2563eb" value={active.length} label="Active POCs" />
+        <StatTile icon={GitBranch} color="#059669" value={promoted.length} label="Promoted to NPD" />
+        <StatTile icon={TrendingUp} color="#0891b2" value={`${avgPct}%`} label="Avg. Progress (active)" barPct={avgPct} />
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><Rocket className="h-4 w-4 text-muted-foreground" />POCs by Stage</CardTitle></CardHeader>
+        <CardHeader><CardTitle><Rocket className="h-4 w-4" />POCs by Stage</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {POC_STAGE_LABELS.map((lbl, i) => (
             <div

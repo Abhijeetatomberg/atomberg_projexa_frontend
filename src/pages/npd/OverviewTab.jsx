@@ -1,20 +1,10 @@
+import { Flag, Gauge, ListChecks, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatTile from '@/components/ui/stat-tile';
 import { GATE_LABELS, badgeForStatus } from '@/lib/constants';
 import { npdPct, npdGatePct } from '@/lib/npd';
 import { fmtDate } from '@/lib/utils';
-
-function Tile({ label, value, cap }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className="text-2xl font-bold leading-none mt-1">{value}</div>
-        {cap && <div className="text-[11px] text-muted-foreground mt-1">{cap}</div>}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function OverviewTab({ project }) {
   const tasks = project.tasks || [];
@@ -27,10 +17,10 @@ export default function OverviewTab({ project }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Tile label="Current Gate" value={GATE_LABELS[project.gate] || '—'} cap={`${pct}% overall`} />
-        <Tile label="Overall Progress" value={`${pct}%`} />
-        <Tile label="Pending Tasks" value={pending.length} cap={`${done} of ${tasks.length} done`} />
-        <Tile label="Business Unit" value={project.businessUnit || '—'} cap={project.devType || 'NPD'} />
+        <StatTile icon={Flag} color="#2563eb" value={GATE_LABELS[project.gate] || '—'} label="Current Gate" caption={`${pct}% overall`} />
+        <StatTile icon={Gauge} color="#7c3aed" value={`${pct}%`} label="Overall Progress" barPct={pct} />
+        <StatTile icon={ListChecks} color={pending.length ? '#d97706' : '#059669'} value={pending.length} label="Pending Tasks" caption={`${done} of ${tasks.length} done`} />
+        <StatTile icon={Building2} color="#0f766e" value={project.businessUnit || '—'} label="Business Unit" caption={project.devType || 'NPD'} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

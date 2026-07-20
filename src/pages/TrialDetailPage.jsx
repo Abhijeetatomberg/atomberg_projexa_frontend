@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FormFields from '@/components/crud/FormFields';
 import { toast } from '@/components/toaster';
 import { TRIAL_SECTION, TRIAL_DEPT, TRIAL_TYPE, HOD_ROLES, badgeForStatus } from '@/lib/constants';
-import { cn, fmtDate, todayIso } from '@/lib/utils';
+import { fmtDate, todayIso } from '@/lib/utils';
 
 const requestFields = [
   { key: 'date', label: 'Date', type: 'date' },
@@ -163,10 +163,8 @@ export default function TrialDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm flex items-center justify-between">
-              HOD Approvals
-              {allApproved && <Badge className="bg-emerald-600">All Approved</Badge>}
-            </CardTitle>
+            <CardTitle className="text-sm">HOD Approvals</CardTitle>
+            {allApproved && <Badge className="bg-emerald-600">All Approved</Badge>}
           </CardHeader>
           <CardContent className="space-y-2">
             {HOD_ROLES.map(([k, label]) => {
@@ -174,16 +172,7 @@ export default function TrialDetailPage() {
               return (
                 <div key={k} className="flex items-center gap-2 rounded-md border px-3 py-2">
                   <span className="text-[13px] flex-1">{label}</span>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      st === 'Approved' && 'bg-emerald-100 text-emerald-700',
-                      st === 'Rejected' && 'bg-red-100 text-red-700',
-                      st === 'Pending' && 'bg-amber-100 text-amber-700'
-                    )}
-                  >
-                    {st}
-                  </Badge>
+                  <Badge variant="outline" className={badgeForStatus(st)}>{st}</Badge>
                   {hodEditable && (
                     <>
                       <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" title="Approve" onClick={() => setHod(k, 'Approved')}>
@@ -207,12 +196,10 @@ export default function TrialDetailPage() {
 
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-sm flex items-center justify-between">
-              Signed Copy
-              {t.signedUploaded
-                ? <Badge className="bg-emerald-600">Uploaded</Badge>
-                : <Badge variant="outline">Not uploaded</Badge>}
-            </CardTitle>
+            <CardTitle className="text-sm">Signed Copy</CardTitle>
+            {t.signedUploaded
+              ? <Badge className="bg-emerald-600">Uploaded</Badge>
+              : <Badge variant="outline">Not uploaded</Badge>}
           </CardHeader>
           <CardContent className="space-y-2">
             {(t.files || []).length === 0 ? (
